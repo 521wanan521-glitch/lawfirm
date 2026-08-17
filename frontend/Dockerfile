@@ -3,7 +3,8 @@ FROM node:20-alpine AS build
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
-RUN npm install --no-audit --no-fund
+# 使用淘宝 npm 镜像加速（国内服务器构建）
+RUN npm install --registry=https://registry.npmmirror.com --no-audit --no-fund
 
 COPY . .
 RUN npm run build
