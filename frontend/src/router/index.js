@@ -19,6 +19,12 @@ const routes = [
         meta: { title: '工作台', icon: 'Odometer' }
       },
       {
+        path: 'assistant',
+        name: 'Assistant',
+        component: () => import('@/views/assistant/Assistant.vue'),
+        meta: { title: 'AI 助手', icon: 'ChatDotRound' }
+      },
+      {
         path: 'cases',
         name: 'CaseList',
         component: () => import('@/views/case/CaseList.vue'),

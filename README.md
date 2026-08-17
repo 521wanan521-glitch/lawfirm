@@ -6,6 +6,7 @@
 
 | 模块 | 说明 |
 | --- | --- |
+| AI 助手 | 类 ChatGPT 的流式对话助手，接入 DeepSeek 大模型，通过工具调用查询/操作系统数据 |
 | 案件管理 | 立案、承办、进程跟踪、状态流转（待立案→办理中→结案→归档）、自动案号 |
 | 客户管理 CRM | 客户档案、联系人、跟进记录、客户分级 |
 | 计时计费 | 工时记录、审核流转、账单生成（草稿→开票→收款→作废） |
@@ -20,6 +21,7 @@
 
 - **后端**：Java 17 · Spring Boot 3.2 · Spring Security + JWT · Spring Data JPA · PostgreSQL 16（开发环境内置 H2）
 - **前端**：Vue 3 · Vite 5 · Element Plus · Pinia · Vue Router · ECharts
+- **AI 助手**：DeepSeek 大模型（deepseek-chat）· 流式对话（SSE）· Function Calling 工具调用
 - **部署**：Docker Compose + Nginx（单机三容器：db / backend / frontend）
 
 ## 目录结构
@@ -33,6 +35,15 @@ lawfirm/
 ```
 
 ## 快速开始（本地开发）
+
+> 🔑 使用「AI 助手」前，先配置 DeepSeek API Key（不配置则 AI 助手会提示未配置）：
+>
+> ```bash
+> # Windows PowerShell
+> $env:DEEPSEEK_API_KEY="sk-你的key"
+> # Linux / macOS
+> export DEEPSEEK_API_KEY="sk-你的key"
+> ```
 
 后端（默认 H2 内存/文件数据库，无需安装数据库）：
 

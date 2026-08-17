@@ -56,6 +56,18 @@
 - 枚举展示（状态/类型标签）统一收敛在 `utils/dict.js`，格式化工具在 `utils/format.js`。
 - 统计图表使用 ECharts。
 
+## AI 助手（DeepSeek 大模型）
+
+- **入口**：侧边栏「AI 助手」，路由 `/assistant`；页面为流式对话（SSE）+ 左侧会话历史。
+- **后端**：`com.lawfirm.assistant` 包。
+  - `DeepSeekClient`：仅用 JDK 内置 `HttpClient` + Jackson 调用 DeepSeek OpenAI 兼容接口（`/chat/completions`，stream=true），解析 SSE 与 `tool_calls`。
+  - `AssistantService`：会话/消息持久化（`chat_session` / `chat_message`）+ 工具调用循环 + `SseEmitter` 推送。
+  - `AssistantToolService`：工具注册与执行，复用各业务 Service（权限与普通接口一致，基于当前登录人）。
+- **工具**（16 个）：案件查询/详情、客户搜索/详情、工时查询/记录、日程查询/创建、知识库检索、文档搜索、审批查询/发起、案件进展记录、经营概况。
+- **SSE 事件**：`meta` / `delta` / `tool` / `tool_result` / `done` / `error`。
+- **配置**：`app.deepseek.*`（`DEEPSEEK_API_KEY` 必填；模型 `deepseek-chat`）。
+- **安全**：工具调用沿用当前登录人 JWT 身份，无提权；写操作结果在界面以工具卡片透明展示。
+
 ## 环境与配置
 
 - **dev 环境**：H2 文件数据库（MODE=PostgreSQL），本地 `mvn spring-boot:run` 即开即用；`application.yml` 中 `spring.profiles.active` 默认 `dev`。
