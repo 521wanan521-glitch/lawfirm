@@ -66,27 +66,33 @@
                 v-for="t in item.tools"
                 :key="t.id || t.name"
                 class="tool-card"
-                :class="{ fail: t.ok === false }"
+                :class="{ fail: t.ok === false, pending: t.status === 'pending' }"
                 @click="t.expanded = !t.expanded"
               >
                 <div class="tool-head">
                   <el-icon class="tool-icon" :class="{ spin: t.status === 'running' }">
                     <Loading v-if="t.status === 'running'" />
-                    <CircleCheck v-else-if="t.ok !== false" />
+                    <WarningFilled v-else-if="t.status === 'pending'" />
+                    <CircleCheck v-else-if="t.ok !== false && t.status !== 'cancelled'" />
                     <CircleClose v-else />
                   </el-icon>
                   <span class="tool-name">{{ toolLabel(t.name) }}</span>
-                  <span class="tool-status">
-                    {{ t.status === 'running' ? '执行中…' : t.ok === false ? '失败' : '已完成' }}
-                  </span>
+                  <span class="tool-status">{{ toolStatusText(t) }}</span>
                   <el-icon class="tool-arrow"><ArrowDown v-if="!t.expanded" /><ArrowUp v-else /></el-icon>
+                </div>
+                <div v-if="t.summary" class="tool-summary">{{ t.summary }}</div>
+                <div v-if="t.status === 'pending'" class="tool-actions">
+                  <el-button size="small" type="success" :icon="CircleCheck" @click.stop="confirmTool(t)">
+                    确认执行
+                  </el-button>
+                  <el-button size="small" :icon="CircleClose" @click.stop="cancelTool(t)">取消</el-button>
                 </div>
                 <div v-if="t.expanded" class="tool-body">
                   <div class="tool-sec">
                     <span class="label">参数</span>
                     <pre>{{ prettyJson(t.arguments) }}</pre>
                   </div>
-                  <div class="tool-sec">
+                  <div v-if="t.result" class="tool-sec">
                     <span class="label">结果</span>
                     <pre>{{ prettyJson(t.result) }}</pre>
                   </div>
@@ -143,9 +149,19 @@ import {
   Loading,
   Plus,
   Promotion,
-  VideoPause
+  VideoPause,
+  WarningFilled
 } from '@element-plus/icons-vue'
-import { chatStream, deleteSession, listMessages, listSessions, renameSession } from '@/api/assistant'
+import {
+  cancelAction,
+  chatStream,
+  confirmAction,
+  deleteSession,
+  listMessages,
+  listPendingActions,
+  listSessions,
+  renameSession
+} from '@/api/assistant'
 import { renderMarkdown } from '@/utils/markdown'
 
 const TOOL_LABELS = {
@@ -164,7 +180,27 @@ const TOOL_LABELS = {
   list_approvers: '审批人',
   create_approval: '发起审批',
   add_case_progress: '记录进展',
-  get_dashboard_summary: '经营概况'
+  get_dashboard_summary: '经营概况',
+  create_case: '新建案件',
+  update_case: '修改案件',
+  update_case_status: '变更案件状态',
+  create_client: '新建客户',
+  update_client: '修改客户',
+  add_client_interaction: '添加跟进',
+  add_client_contact: '添加联系人',
+  update_client_contact: '修改联系人',
+  update_time_entry: '修改工时',
+  create_invoice: '创建账单',
+  update_invoice_status: '变更账单状态',
+  update_calendar_event: '修改日程',
+  decide_approval: '审批决定',
+  cancel_approval: '撤销审批',
+  create_folder: '新建目录',
+  create_knowledge_article: '发布知识文章',
+  update_knowledge_article: '修改知识文章',
+  create_user: '新建成员',
+  update_user: '修改成员',
+  reset_user_password: '重置密码'
 }
 
 const suggestions = [
@@ -222,6 +258,25 @@ async function selectSession(s) {
       content: m.content,
       tools: []
     }))
+    // 恢复本会话内尚未处理的待确认操作
+    const actions = await listPendingActions(s.id)
+    if (actions?.length) {
+      items.value.push({
+        kind: 'assistant',
+        content: '',
+        tools: actions.map((x) => ({
+          id: 'action-' + x.id,
+          name: x.toolName,
+          arguments: x.arguments,
+          status: 'pending',
+          ok: null,
+          result: null,
+          expanded: false,
+          actionId: x.id,
+          summary: x.summary
+        }))
+      })
+    }
     scrollToBottom()
   } catch (e) {
     /* ignore */
@@ -283,10 +338,12 @@ function handleEvent(event, data, assistantItem) {
         id: data.id,
         name: data.name,
         arguments: data.arguments,
-        status: 'running',
+        status: data.pending ? 'pending' : 'running',
         ok: null,
         result: null,
-        expanded: false
+        expanded: false,
+        actionId: data.actionId || null,
+        summary: data.summary || ''
       })
       scrollToBottom()
       break
@@ -314,6 +371,42 @@ function stopStream() {
     controller = null
   }
   streaming.value = false
+}
+
+async function confirmTool(t) {
+  if (!t.actionId) return
+  try {
+    const res = await confirmAction(t.actionId)
+    t.status = 'done'
+    t.ok = res.ok
+    t.result = res.result
+    if (res.ok) {
+      ElMessage.success('操作已执行')
+    } else {
+      ElMessage.error('执行失败，详见卡片结果')
+    }
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+async function cancelTool(t) {
+  if (!t.actionId) return
+  try {
+    await cancelAction(t.actionId)
+    t.status = 'cancelled'
+    t.ok = false
+    ElMessage.info('已取消')
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+function toolStatusText(t) {
+  if (t.status === 'running') return '执行中…'
+  if (t.status === 'pending') return '待确认'
+  if (t.status === 'cancelled') return '已取消'
+  return t.ok === false ? '失败' : '已完成'
 }
 
 function startRename(s) {
@@ -591,6 +684,28 @@ function scrollToBottom() {
 .tool-card.fail {
   border-color: #fde2e2;
   background: #fef0f0;
+}
+
+.tool-card.pending {
+  border-color: #faecd8;
+  background: #fdf6ec;
+}
+
+.tool-card.pending .tool-icon {
+  color: #e6a23c;
+}
+
+.tool-summary {
+  margin-top: 6px;
+  color: #606266;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.tool-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
 }
 
 .tool-head {

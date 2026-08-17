@@ -2,6 +2,7 @@ package com.lawfirm.assistant;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lawfirm.assistant.dto.ActionView;
 import com.lawfirm.assistant.dto.ChatRequest;
 import com.lawfirm.assistant.dto.MessageView;
 import com.lawfirm.assistant.dto.SessionView;
@@ -11,6 +12,7 @@ import com.lawfirm.client.ClientService;
 import com.lawfirm.client.dto.ClientView;
 import com.lawfirm.common.BizException;
 import com.lawfirm.security.CurrentUser;
+import com.lawfirm.user.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -42,6 +44,7 @@ public class AssistantService {
     private final AssistantToolService toolService;
     private final ChatSessionRepository sessionRepository;
     private final ChatMessageRepository messageRepository;
+    private final AssistantPendingActionRepository actionRepository;
     private final CaseService caseService;
     private final ClientService clientService;
     private final ExecutorService assistantExecutor;
@@ -134,15 +137,19 @@ public class AssistantService {
 
             // 执行工具
             for (DeepSeekClient.ToolCall tc : result.toolCalls()) {
-                sendToolEvent(emitter, "tool", tc.id(), tc.name(), tc.arguments(), null, null);
-                AssistantToolService.ToolResult tr = toolService.execute(tc.name(), tc.arguments());
-                sendToolEvent(emitter, "tool_result", tc.id(), tc.name(), null, tr.ok(), tr.json());
+                if (toolService.requiresConfirmation(tc.name())) {
+                    handleConfirmTool(session, userId, emitter, tc, messages);
+                } else {
+                    sendToolEvent(emitter, "tool", tc.id(), tc.name(), tc.arguments(), null, null);
+                    AssistantToolService.ToolResult tr = toolService.execute(tc.name(), tc.arguments());
+                    sendToolEvent(emitter, "tool_result", tc.id(), tc.name(), null, tr.ok(), tr.json());
 
-                Map<String, Object> toolMsg = new LinkedHashMap<>();
-                toolMsg.put("role", "tool");
-                toolMsg.put("tool_call_id", tc.id());
-                toolMsg.put("content", tr.json());
-                messages.add(toolMsg);
+                    Map<String, Object> toolMsg = new LinkedHashMap<>();
+                    toolMsg.put("role", "tool");
+                    toolMsg.put("tool_call_id", tc.id());
+                    toolMsg.put("content", tr.json());
+                    messages.add(toolMsg);
+                }
             }
             unresolvedTools = true;
         }
@@ -198,7 +205,98 @@ public class AssistantService {
         return new SessionView(session.getId(), session.getTitle(), session.getLastMessageAt(), session.getCreatedAt());
     }
 
+    // ==================== 写操作确认（human-in-the-loop） ====================
+
+    /** 当前用户待确认的操作列表（可按会话过滤） */
+    public List<ActionView> pendingActions(Long sessionId) {
+        Long userId = CurrentUser.id();
+        List<AssistantPendingAction> list;
+        if (sessionId != null) {
+            list = actionRepository
+                    .findBySessionIdAndStatusOrderByCreatedAtDesc(sessionId, AssistantPendingAction.Status.PENDING)
+                    .stream().filter(a -> a.getUserId().equals(userId)).toList();
+        } else {
+            list = actionRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, AssistantPendingAction.Status.PENDING);
+        }
+        return list.stream().map(this::toActionView).toList();
+    }
+
+    /** 确认执行：以当前登录人身份真正执行该写操作 */
+    public Map<String, Object> confirmAction(Long actionId) {
+        AssistantPendingAction action = getOwnAction(actionId);
+        if (action.getStatus() != AssistantPendingAction.Status.PENDING) {
+            throw new BizException("该操作已处理");
+        }
+        AssistantToolService.ToolResult tr = toolService.execute(action.getToolName(), action.getArguments());
+        action.setResult(tr.json());
+        action.setStatus(AssistantPendingAction.Status.EXECUTED);
+        action.setDecidedAt(LocalDateTime.now());
+        actionRepository.save(action);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("ok", tr.ok());
+        out.put("result", tr.json());
+        return out;
+    }
+
+    /** 取消待确认操作 */
+    public void cancelAction(Long actionId) {
+        AssistantPendingAction action = getOwnAction(actionId);
+        if (action.getStatus() != AssistantPendingAction.Status.PENDING) {
+            throw new BizException("该操作已处理");
+        }
+        action.setStatus(AssistantPendingAction.Status.CANCELLED);
+        action.setDecidedAt(LocalDateTime.now());
+        actionRepository.save(action);
+    }
+
     // ==================== 私有方法 ====================
+
+    private void handleConfirmTool(ChatSession session, Long userId, SseEmitter emitter,
+                                   DeepSeekClient.ToolCall tc, List<Map<String, Object>> messages) {
+        AssistantPendingAction action = new AssistantPendingAction();
+        action.setSessionId(session.getId());
+        action.setUserId(userId);
+        action.setToolName(tc.name());
+        action.setArguments(tc.arguments());
+        action.setSummary(toolService.describe(tc.name(), tc.arguments()));
+        action.setStatus(AssistantPendingAction.Status.PENDING);
+        action = actionRepository.save(action);
+
+        // 告知前端展示确认卡片（参数脱敏展示，真实参数保存在待确认记录中）
+        Map<String, Object> toolData = new LinkedHashMap<>();
+        toolData.put("id", tc.id());
+        toolData.put("name", tc.name());
+        toolData.put("arguments", toolService.maskSensitive(tc.arguments()));
+        toolData.put("pending", true);
+        toolData.put("actionId", action.getId());
+        toolData.put("summary", action.getSummary());
+        send(emitter, "tool", toolData);
+
+        String resultJson = "{\"status\":\"pending_confirmation\",\"actionId\":" + action.getId()
+                + ",\"message\":\"该写操作已生成确认请求，需用户在界面点击确认后才会执行\"}";
+        sendToolEvent(emitter, "tool_result", tc.id(), tc.name(), null, true, resultJson);
+
+        Map<String, Object> toolMsg = new LinkedHashMap<>();
+        toolMsg.put("role", "tool");
+        toolMsg.put("tool_call_id", tc.id());
+        toolMsg.put("content", resultJson);
+        messages.add(toolMsg);
+    }
+
+    private AssistantPendingAction getOwnAction(Long actionId) {
+        AssistantPendingAction a = actionRepository.findById(actionId)
+                .orElseThrow(() -> new BizException("操作记录不存在"));
+        if (!a.getUserId().equals(CurrentUser.id())) {
+            throw new BizException(403, "无权操作该记录");
+        }
+        return a;
+    }
+
+    private ActionView toActionView(AssistantPendingAction a) {
+        return new ActionView(a.getId(), a.getSessionId(), a.getToolName(),
+                toolService.maskSensitive(a.getArguments()), a.getSummary(),
+                a.getStatus().name(), a.getCreatedAt());
+    }
 
     private ChatSession resolveSession(ChatRequest request, Long userId) {
         ChatSession session = null;
@@ -257,6 +355,7 @@ public class AssistantService {
     }
 
     private Map<String, Object> systemMessage() {
+        User me = CurrentUser.user();
         String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         String prompt = """
                 你是「律所数字化办公系统」内置的智能助手，服务于律师事务所的律师、合伙人、助理与行政人员。你的职责是帮助用户高效处理案件、客户、工时计费、日程、审批、文档、知识库与经营报表相关工作。
@@ -264,13 +363,15 @@ public class AssistantService {
                 你可以通过工具（function calling）查询或操作系统内的真实数据。请遵守以下规则：
                 1. 优先调用工具获取真实数据后再回答，不要凭空猜测案号、金额、日期、状态等事实信息。
                 2. 涉及"我的"视角时（我的案件、我的工时、我的日程、待我审批），直接使用相应工具，工具会自动以当前登录人身份过滤数据。
-                3. 写操作（记录工时、创建日程、发起审批、记录案件进展）执行前，先简要告知用户你将要做什么；执行后清晰汇报结果（如新工时 id、新日程、审批单号等）。
+                3. 系统提供创建/修改类写操作工具，但不提供删除功能。所有写操作都不会立即生效：调用后进入"待用户确认"状态。你需要在回答中清晰说明即将执行的操作内容，并提醒用户点击界面上的"确认执行"按钮后才真正执行；用户点"取消"则不会执行。不要替用户假设已确认，同一写操作只调用一次，不要重复调用。
                 4. 不得编造法律条文、判例或案件事实；知识库未检索到依据时，明确说明"未在知识库中检索到相关内容"。
                 5. 涉及起草文书时，基于案件/客户的真实信息撰写，并提醒用户由执业律师最终审核。
                 6. 回答使用简体中文，专业、简洁、条理清晰，适当使用 Markdown 列表或表格。
                 7. 注意保护当事人隐私，不要主动输出无关人员的敏感信息。
 
-                当前时间：""" + now;
+                当前登录人：id=%d，姓名=%s，角色=%s。当操作需要主办律师/负责人（ownerId）/申请人等身份信息时，默认使用当前登录人（id=%d），除非用户明确指定其他人。
+                当前时间：%s
+                """.formatted(me.getId(), me.getRealName(), me.getRole().name(), me.getId(), now);
         return roleMessage("system", prompt);
     }
 

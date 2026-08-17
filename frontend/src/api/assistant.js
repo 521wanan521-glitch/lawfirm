@@ -5,6 +5,11 @@ export const listMessages = (id) => request.get(`/assistant/sessions/${id}/messa
 export const deleteSession = (id) => request.delete(`/assistant/sessions/${id}`)
 export const renameSession = (id, title) => request.put(`/assistant/sessions/${id}`, { title })
 
+/** 待确认写操作 */
+export const listPendingActions = (sessionId) => request.get('/assistant/actions', { params: { sessionId } })
+export const confirmAction = (id) => request.post(`/assistant/actions/${id}/confirm`)
+export const cancelAction = (id) => request.post(`/assistant/actions/${id}/cancel`)
+
 /**
  * 流式对话（SSE）。后端事件：meta / delta / tool / tool_result / done / error
  * @param {{sessionId:number|null, message:string, caseId?:number, clientId?:number, onEvent:function, signal?:AbortSignal}} params
