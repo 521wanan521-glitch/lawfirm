@@ -33,7 +33,26 @@ docker --version
 docker compose version
 ```
 
-## 四、上传代码并配置环境
+## 四、一键部署（最快，推荐）
+
+若只想最快上线，完成上方「安装 Docker」后，直接执行仓库内置的一键脚本：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/521wanan521-glitch/lawfirm/main/deploy/deploy.sh)
+```
+
+脚本会自动完成：拉取代码 → 生成随机数据库密码与 JWT 密钥 → 构建并启动三个容器。
+
+> 国内 ECS 若访问 GitHub 慢，改用分步方式：
+> ```bash
+> git clone https://github.com/521wanan521-glitch/lawfirm.git /opt/lawfirm
+> cd /opt/lawfirm/deploy
+> bash deploy.sh
+> ```
+
+以下为手动部署方式，可作参考或排障用。
+
+## 四（手动）、上传代码并配置环境
 
 ```bash
 # 1. 在服务器创建项目目录
