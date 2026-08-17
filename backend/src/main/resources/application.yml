@@ -3,6 +3,11 @@ spring:
     name: lawfirm-backend
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev,local}
+  security:
+    filter:
+      # 安全过滤器仅作用于初始请求；跳过 ASYNC 收尾分发，
+      # 否则 SseEmitter 完成时的 async dispatch 会因认证上下文未恢复而 403，导致流式响应被截断
+      dispatcher-types: request, error
   jackson:
     time-zone: Asia/Shanghai
     date-format: yyyy-MM-dd HH:mm:ss
