@@ -97,6 +97,17 @@ docker compose logs -f backend
 验证：浏览器访问 `http://服务器IP`，看到登录页即部署成功。
 使用 `admin / admin123` 登录（登录后立即在「成员管理」中修改密码）。
 
+> **AI 助手配置**：`deploy.sh` 会提示输入 DeepSeek API Key 并写入 `.env`；
+> 若跳过了，事后手动执行：
+>
+> ```bash
+> cd /opt/lawfirm/deploy
+> vim .env                      # 填写 DEEPSEEK_API_KEY=sk-...
+> docker compose up -d backend  # 重启后端生效
+> ```
+
+> **本阶段为 IP + HTTP（无域名）**：系统功能全部可用；浏览器无法安装 PWA（Chrome/Edge 要求 HTTPS），员工可用 **Electron 桌面客户端**（`desktop/config.json` 的 `url` 填 `http://服务器IP` 后重新打包/或安装后改 `resources/config.json`）。后续完成域名 + HTTPS 后，浏览器即可一键安装 PWA。
+
 ## 六、配置 HTTPS（域名 + 证书）
 
 推荐使用 Caddy 或 Nginx 代理，下面以 Nginx 为例（假设已申请证书）。
@@ -186,7 +197,8 @@ docker compose run --rm -v uploads:/data alpine tar czf - /data > uploads_backup
 
 ## 八、安全加固清单
 
-- [ ] 修改所有默认账号密码（admin/partner/lawyer1 等）
+- [ ] **上线后第一件事**：修改所有默认账号密码（admin/partner/lawyer1/lawyer2/paralegal/staff，默认密码均为账号名+123，系统已自动初始化演示账号）
+- [ ] AI 助手已内置"写操作需人工确认"，请向员工说明确认卡片的使用
 - [ ] `.env` 中的 `DB_PASSWORD`、`APP_JWT_SECRET` 使用强随机值
 - [ ] 安全组仅放行 80/443（和 22 用于 SSH 管理）
 - [ ] SSH 改为密钥登录并禁用密码登录（`/etc/ssh/sshd_config` 中 `PasswordAuthentication no`）

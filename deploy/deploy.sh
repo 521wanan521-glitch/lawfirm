@@ -41,14 +41,29 @@ if [ ! -f .env ]; then
   info "生成 .env 配置（随机数据库密码与 JWT 密钥）..."
   DB_PWD=$(openssl rand -base64 18 | tr -dc 'a-zA-Z0-9' | head -c 16)
   JWT_KEY=$(openssl rand -base64 48 | tr -dc 'a-zA-Z0-9' | head -c 40)
+  DEEPSEEK_KEY="${DEEPSEEK_API_KEY:-}"
+  if [ -z "$DEEPSEEK_KEY" ]; then
+    read -r -p "请输入 DeepSeek API Key（AI 助手功能需要，可留空跳过）: " DEEPSEEK_KEY || true
+  fi
   cat > .env <<EOF
 DB_NAME=lawfirm
 DB_USER=lawfirm
 DB_PASSWORD=${DB_PWD}
 APP_JWT_SECRET=${JWT_KEY}
+DEEPSEEK_API_KEY=${DEEPSEEK_KEY}
+DEEPSEEK_BASE_URL=${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
+DEEPSEEK_MODEL=${DEEPSEEK_MODEL:-deepseek-chat}
 EOF
 else
   info ".env 已存在，跳过生成"
+  grep -q "DEEPSEEK_API_KEY" .env 2>/dev/null || {
+    warn "检测到旧 .env 缺少 AI 助手配置，正在补充..."
+    cat >> .env <<EOF
+DEEPSEEK_API_KEY=
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-chat
+EOF
+  }
 fi
 
 # ---------- 4. 构建并启动 ----------
@@ -61,8 +76,13 @@ IP=$(curl -fsSL --max-time 5 ifconfig.me 2>/dev/null || echo "你的服务器公
 echo ""
 info "部署完成！"
 echo "  访问地址：  http://${IP}"
-echo "  默认账号：  admin / admin123（登录后请在右上角修改密码）"
+echo "  默认账号：  admin / admin123（登录后请立即修改所有默认账号密码！）"
 echo "  查看状态：  cd ${APP_DIR}/deploy && docker compose ps"
 echo "  查看日志：  cd ${APP_DIR}/deploy && docker compose logs -f backend"
 echo ""
-warn "上线前请确认安全组已放行 80 端口；生产环境建议按 docs/DEPLOY_ALIYUN.md 配置 HTTPS"
+warn "上线检查清单："
+warn "  1. 安全组已放行 80 端口"
+warn "  2. .env 中的 DEEPSEEK_API_KEY 已填写（AI 助手功能）"
+warn "  3. 登录后立即修改 admin/partner/lawyer1 等默认账号密码"
+warn "  4. 本阶段为 HTTP；PWA 安装需要 HTTPS（域名+证书），详见 docs/DEPLOY_ALIYUN.md"
+warn "  5. 桌面客户端（Electron）请把 config.json 的 url 改为 http://${IP}"
