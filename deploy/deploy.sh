@@ -50,6 +50,7 @@ DB_NAME=lawfirm
 DB_USER=lawfirm
 DB_PASSWORD=${DB_PWD}
 APP_JWT_SECRET=${JWT_KEY}
+FRONTEND_PORT=${FRONTEND_PORT:-80}
 DEEPSEEK_API_KEY=${DEEPSEEK_KEY}
 DEEPSEEK_BASE_URL=${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
 DEEPSEEK_MODEL=${DEEPSEEK_MODEL:-deepseek-chat}
@@ -73,16 +74,17 @@ docker compose up -d --build
 # ---------- 5. 完成提示 ----------
 sleep 3
 IP=$(curl -fsSL --max-time 5 ifconfig.me 2>/dev/null || echo "你的服务器公网IP")
+PORT="${FRONTEND_PORT:-80}"
 echo ""
 info "部署完成！"
-echo "  访问地址：  http://${IP}"
+echo "  访问地址：  http://${IP}:${PORT}"
 echo "  默认账号：  admin / admin123（登录后请立即修改所有默认账号密码！）"
 echo "  查看状态：  cd ${APP_DIR}/deploy && docker compose ps"
 echo "  查看日志：  cd ${APP_DIR}/deploy && docker compose logs -f backend"
 echo ""
 warn "上线检查清单："
-warn "  1. 安全组已放行 80 端口"
+warn "  1. 安全组已放行 ${PORT} 端口"
 warn "  2. .env 中的 DEEPSEEK_API_KEY 已填写（AI 助手功能）"
 warn "  3. 登录后立即修改 admin/partner/lawyer1 等默认账号密码"
 warn "  4. 本阶段为 HTTP；PWA 安装需要 HTTPS（域名+证书），详见 docs/DEPLOY_ALIYUN.md"
-warn "  5. 桌面客户端（Electron）请把 config.json 的 url 改为 http://${IP}"
+warn "  5. 桌面客户端（Electron）请把 config.json 的 url 改为 http://${IP}:${PORT}"

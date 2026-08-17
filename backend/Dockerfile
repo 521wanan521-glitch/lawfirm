@@ -2,6 +2,9 @@
 FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
 
+# 限制构建 JVM 内存，适配小内存（≤2G）服务器
+ENV MAVEN_OPTS="-Xmx512m -XX:MaxMetaspaceSize=256m"
+
 # 先拷贝 pom 缓存依赖，加速后续构建
 COPY pom.xml .
 # 使用阿里云 Maven 镜像加速（国内服务器构建）
