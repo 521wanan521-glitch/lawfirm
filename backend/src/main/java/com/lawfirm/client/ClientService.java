@@ -56,6 +56,9 @@ public class ClientService {
             if (ownerId != null) {
                 predicates.add(cb.equal(root.get("ownerId"), ownerId));
             }
+            if (!CurrentUser.isManager()) {
+                predicates.add(cb.equal(root.get("ownerId"), CurrentUser.id()));
+            }
             return cb.and(predicates.toArray(new Predicate[0]));
         };
         Page<Client> result = clientRepository.findAll(spec, pageable);
@@ -67,12 +70,13 @@ public class ClientService {
     @Transactional(readOnly = true)
     public ClientView detail(Long id) {
         Client client = getById(id);
+        checkClientAccess(client);
         Map<Long, String> userNames = userNameMap(client.getOwnerId() == null ? List.of() : List.of(client.getOwnerId()));
         return toView(client, userNames);
     }
 
     public PageResult<InteractionView> interactions(Long clientId, int page, int size) {
-        getById(clientId);
+        checkClientAccess(getById(clientId));
         PageRequest pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Interaction> result = interactionRepository.findByClientIdOrderByCreatedAtDesc(clientId, pageable);
         Map<Long, String> userNames = userNameMap(result.getContent().stream()
@@ -92,13 +96,15 @@ public class ClientService {
     @Transactional
     public ClientView update(Long id, ClientRequest request) {
         Client client = getById(id);
+        checkClientAccess(client);
         apply(client, request);
         return toView(clientRepository.save(client), Map.of());
     }
 
     @Transactional
     public void delete(Long id) {
-        getById(id);
+        Client client = getById(id);
+        checkClientAccess(client);
         contactRepository.deleteByClientId(id);
         interactionRepository.deleteByClientId(id);
         clientRepository.deleteById(id);
@@ -107,14 +113,14 @@ public class ClientService {
     // ---------- 联系人 ----------
 
     public List<ContactView> contacts(Long clientId) {
-        getById(clientId);
+        checkClientAccess(getById(clientId));
         return contactRepository.findByClientIdOrderByCreatedAtAsc(clientId).stream()
                 .map(ContactView::from).toList();
     }
 
     @Transactional
     public ContactView addContact(Long clientId, ContactRequest request) {
-        getById(clientId);
+        checkClientAccess(getById(clientId));
         Contact contact = new Contact();
         contact.setClientId(clientId);
         apply(contact, request);
@@ -123,6 +129,7 @@ public class ClientService {
 
     @Transactional
     public ContactView updateContact(Long clientId, Long contactId, ContactRequest request) {
+        checkClientAccess(getById(clientId));
         Contact contact = getContact(clientId, contactId);
         apply(contact, request);
         return ContactView.from(contactRepository.save(contact));
@@ -130,6 +137,7 @@ public class ClientService {
 
     @Transactional
     public void deleteContact(Long clientId, Long contactId) {
+        checkClientAccess(getById(clientId));
         Contact contact = getContact(clientId, contactId);
         contactRepository.delete(contact);
     }
@@ -138,7 +146,7 @@ public class ClientService {
 
     @Transactional
     public InteractionView addInteraction(Long clientId, InteractionRequest request) {
-        getById(clientId);
+        checkClientAccess(getById(clientId));
         Interaction interaction = new Interaction();
         interaction.setClientId(clientId);
         interaction.setUserId(CurrentUser.id());
@@ -185,6 +193,16 @@ public class ClientService {
 
     private Client getById(Long id) {
         return clientRepository.findById(id).orElseThrow(() -> new BizException("客户不存在"));
+    }
+
+    /** 客户数据权限：仅负责人或管理员（合伙人）可见 */
+    private void checkClientAccess(Client client) {
+        if (CurrentUser.isManager()) {
+            return;
+        }
+        if (!CurrentUser.id().equals(client.getOwnerId())) {
+            throw new BizException(403, "无权访问该客户");
+        }
     }
 
     private Contact getContact(Long clientId, Long contactId) {

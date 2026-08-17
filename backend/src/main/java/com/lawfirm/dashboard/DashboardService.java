@@ -11,6 +11,7 @@ import com.lawfirm.cases.CaseRepository;
 import com.lawfirm.cases.CaseStatus;
 import com.lawfirm.cases.CaseType;
 import com.lawfirm.client.ClientRepository;
+import com.lawfirm.common.BizException;
 import com.lawfirm.dashboard.DashboardSummary.RecentCase;
 import com.lawfirm.dashboard.StatsView.LawyerHours;
 import com.lawfirm.dashboard.StatsView.MonthlyPoint;
@@ -48,20 +49,18 @@ public class DashboardService {
     private final UserRepository userRepository;
 
     public DashboardSummary summary() {
+        if (CurrentUser.isManager()) {
+            return managerSummary();
+        }
+        return personalSummary();
+    }
+
+    private DashboardSummary managerSummary() {
         Long me = CurrentUser.id();
         LocalDate monthStart = YearMonth.now().atDay(1);
         LocalDate monthEnd = YearMonth.now().atEndOfMonth();
         LocalDateTime weekStart = LocalDateTime.now();
         LocalDateTime weekEnd = LocalDateTime.now().plusDays(7);
-
-        Specification<Case> myOpenSpec = (root, query, cb) -> {
-            var co = cb.isMember(me, root.get("coLawyerIds"));
-            return cb.and(
-                    cb.or(cb.equal(root.get("leadLawyerId"), me), co),
-                    cb.notEqual(root.get("status"), CaseStatus.CLOSED),
-                    cb.notEqual(root.get("status"), CaseStatus.ARCHIVED)
-            );
-        };
 
         List<Case> recentCases = caseRepository.findAll(
                 PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "createdAt"))).getContent();
@@ -73,16 +72,64 @@ public class DashboardService {
                 clientRepository.count(),
                 approvalInstanceRepository.countByStatus(ApprovalStatus.PENDING),
                 timeEntryRepository.countByStatus(TimeEntryStatus.SUBMITTED),
-                caseRepository.count(myOpenSpec),
+                caseRepository.count(myOpenSpec(me)),
                 calendarEventRepository.countByStartTimeBetween(weekStart, weekEnd),
                 invoiceRepository.sumAmountByIssueDateBetween(monthStart, monthEnd),
-                recentCases.stream().map(c -> new RecentCase(c.getId(), c.getCaseNo(), c.getTitle(),
-                        c.getStatus().name(),
-                        userRepository.findById(c.getLeadLawyerId()).map(User::getRealName).orElse(""))).toList()
+                recentCases.stream().map(this::toRecent).toList()
         );
     }
 
+    private DashboardSummary personalSummary() {
+        Long me = CurrentUser.id();
+        LocalDateTime weekEnd = LocalDateTime.now().plusDays(7);
+
+        long myOpen = caseRepository.count(myOpenSpec(me));
+        long myPendingTime = timeEntryRepository.countByUserIdAndStatus(me, TimeEntryStatus.SUBMITTED);
+        long myUpcoming = calendarEventRepository
+                .findByStartTimeBetweenOrderByStartTimeAsc(LocalDateTime.now(), weekEnd).stream()
+                .filter(e -> me.equals(e.getCreatorId())
+                        || (e.getParticipantIds() != null && e.getParticipantIds().contains(me)))
+                .count();
+
+        List<Case> myRecent = caseRepository.findAll(myCaseSpec(me),
+                PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "createdAt"))).getContent();
+
+        return new DashboardSummary(
+                0L, 0L, 0L, 0L, 0L,
+                myPendingTime,
+                myOpen,
+                myUpcoming,
+                BigDecimal.ZERO,
+                myRecent.stream().map(this::toRecent).toList()
+        );
+    }
+
+    private Specification<Case> myOpenSpec(Long me) {
+        return (root, query, cb) -> {
+            var co = cb.isMember(me, root.get("coLawyerIds"));
+            return cb.and(
+                    cb.or(cb.equal(root.get("leadLawyerId"), me), co),
+                    cb.notEqual(root.get("status"), CaseStatus.CLOSED),
+                    cb.notEqual(root.get("status"), CaseStatus.ARCHIVED)
+            );
+        };
+    }
+
+    private Specification<Case> myCaseSpec(Long me) {
+        return (root, query, cb) -> cb.or(
+                cb.equal(root.get("leadLawyerId"), me),
+                cb.isMember(me, root.get("coLawyerIds")));
+    }
+
+    private RecentCase toRecent(Case c) {
+        return new RecentCase(c.getId(), c.getCaseNo(), c.getTitle(), c.getStatus().name(),
+                userRepository.findById(c.getLeadLawyerId()).map(User::getRealName).orElse(""));
+    }
+
     public StatsView stats() {
+        if (!CurrentUser.isManager()) {
+            throw new BizException(403, "仅管理员或合伙人可查看经营统计");
+        }
         // 案件类型分布
         List<Object[]> typeRows = caseRepository.countGroupByType();
         List<NameCount> casesByType = typeRows.stream()

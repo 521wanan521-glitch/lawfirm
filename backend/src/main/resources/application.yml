@@ -23,8 +23,8 @@ springdoc:
 # 应用自定义配置
 app:
   jwt:
-    # 生产环境务必通过环境变量 APP_JWT_SECRET 覆盖（至少 32 字符）
-    secret: ${APP_JWT_SECRET:LawFirmSystemDefaultSecretKeyChangeMeInProduction2024!}
+    # 无默认回退值：生产环境必须通过 APP_JWT_SECRET 注入（至少 32 字符），否则启动失败
+    secret: ${APP_JWT_SECRET:}
     # 令牌有效期（毫秒），默认 12 小时
     expire-ms: ${APP_JWT_EXPIRE_MS:43200000}
   upload-dir: ${APP_UPLOAD_DIR:./data/uploads}
@@ -44,7 +44,7 @@ spring:
     activate:
       on-profile: dev
   datasource:
-    url: jdbc:h2:file:./data/lawfirm-dev;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE
+    url: jdbc:h2:file:./data/lawfirm-dev;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password: ""
@@ -59,6 +59,11 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+# 开发环境专用 JWT 密钥（仅本地开发回退；生产必须用 APP_JWT_SECRET 注入）
+app:
+  jwt:
+    secret: ${APP_JWT_SECRET:lawfirm-dev-only-jwt-secret-0123456789abcdef0123456789abcdef}
 
 ---
 # 生产环境：PostgreSQL（Docker 部署使用）

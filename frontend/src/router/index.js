@@ -88,7 +88,7 @@ const routes = [
         path: 'stats',
         name: 'StatsView',
         component: () => import('@/views/stats/StatsView.vue'),
-        meta: { title: '统计报表', icon: 'DataAnalysis' }
+        meta: { title: '统计报表', icon: 'DataAnalysis', managerOnly: true }
       },
       {
         path: 'admin/users',

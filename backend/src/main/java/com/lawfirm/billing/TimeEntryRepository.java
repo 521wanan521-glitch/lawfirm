@@ -17,6 +17,8 @@ public interface TimeEntryRepository extends JpaRepository<TimeEntry, Long>, Jpa
 
     long countByStatus(TimeEntryStatus status);
 
+    long countByUserIdAndStatus(Long userId, TimeEntryStatus status);
+
     @Query("select coalesce(sum(t.hours),0) from TimeEntry t where t.userId = :userId and t.workDate between :start and :end")
     BigDecimal sumHours(@Param("userId") Long userId, @Param("start") LocalDate start, @Param("end") LocalDate end);
 

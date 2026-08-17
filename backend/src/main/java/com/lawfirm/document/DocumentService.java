@@ -1,5 +1,9 @@
 package com.lawfirm.document;
 
+import com.lawfirm.cases.Case;
+import com.lawfirm.cases.CaseRepository;
+import com.lawfirm.client.Client;
+import com.lawfirm.client.ClientRepository;
 import com.lawfirm.common.BizException;
 import com.lawfirm.common.PageResult;
 import com.lawfirm.document.dto.DocumentVersionView;
@@ -31,7 +35,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -47,6 +53,8 @@ public class DocumentService {
     private final DocumentVersionRepository versionRepository;
     private final DocFolderRepository folderRepository;
     private final UserRepository userRepository;
+    private final CaseRepository caseRepository;
+    private final ClientRepository clientRepository;
 
     @Value("${app.upload-dir}")
     private String uploadDir;
@@ -94,6 +102,7 @@ public class DocumentService {
     public DocumentView addVersion(Long id, MultipartFile file, String remark) {
         validateFile(file);
         Document doc = documentRepository.findById(id).orElseThrow(() -> new BizException("文档不存在"));
+        checkAccess(doc);
         String storedName = storeFile(file);
         try {
             Integer newVersion = doc.getVersion() + 1;
@@ -133,6 +142,20 @@ public class DocumentService {
             if (clientId != null) predicates.add(cb.equal(root.get("clientId"), clientId));
             if (folderId != null) predicates.add(cb.equal(root.get("folderId"), folderId));
             if (category != null) predicates.add(cb.equal(root.get("category"), category));
+            if (!CurrentUser.isManager()) {
+                Long me = CurrentUser.id();
+                List<Long> caseIds = myCaseIds(me);
+                List<Long> clientIds = myClientIds(me);
+                List<Predicate> ors = new ArrayList<>();
+                ors.add(cb.equal(root.get("uploadedBy"), me));
+                if (!caseIds.isEmpty()) {
+                    ors.add(root.get("caseId").in(caseIds));
+                }
+                if (!clientIds.isEmpty()) {
+                    ors.add(root.get("clientId").in(clientIds));
+                }
+                predicates.add(cb.or(ors.toArray(new Predicate[0])));
+            }
             return cb.and(predicates.toArray(new Predicate[0]));
         };
         Page<Document> result = documentRepository.findAll(spec, pageable);
@@ -140,11 +163,14 @@ public class DocumentService {
     }
 
     public DocumentView detail(Long id) {
-        return toView(getById(id));
+        Document doc = getById(id);
+        checkAccess(doc);
+        return toView(doc);
     }
 
     public List<DocumentVersionView> versions(Long id) {
-        getById(id);
+        Document doc = getById(id);
+        checkAccess(doc);
         List<DocumentVersion> versions = versionRepository.findByDocumentIdOrderByVersionDesc(id);
         Map<Long, String> userNames = userNameMap(versions.stream().map(DocumentVersion::getUploadedBy).distinct().toList());
         return versions.stream()
@@ -155,6 +181,7 @@ public class DocumentService {
 
     public DownloadContent download(Long id, Integer version) {
         Document doc = getById(id);
+        checkAccess(doc);
         int target = version == null ? doc.getVersion() : version;
         DocumentVersion dv = versionRepository.findByDocumentIdAndVersion(id, target)
                 .orElseThrow(() -> new BizException("版本不存在"));
@@ -236,11 +263,7 @@ public class DocumentService {
 
     private String storeFile(MultipartFile file) {
         try {
-            String ext = "";
-            String original = file.getOriginalFilename();
-            if (original != null && original.contains(".")) {
-                ext = original.substring(original.lastIndexOf('.'));
-            }
+            String ext = safeExtension(file.getOriginalFilename());
             String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMM"));
             String storedName = datePath + "/" + UUID.randomUUID().toString().replace("-", "") + ext;
             Path target = resolvePath(storedName);
@@ -252,8 +275,36 @@ public class DocumentService {
         }
     }
 
+    /** 从原始文件名安全提取扩展名（白名单，杜绝路径穿越） */
+    private String safeExtension(String original) {
+        if (original == null) {
+            return "";
+        }
+        String name = original.replace('\\', '/');
+        int slash = name.lastIndexOf('/');
+        if (slash >= 0) {
+            name = name.substring(slash + 1);
+        }
+        int dot = name.lastIndexOf('.');
+        if (dot < 0) {
+            return "";
+        }
+        String ext = name.substring(dot).toLowerCase(Locale.ROOT);
+        Set<String> allowed = Set.of(".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
+                ".txt", ".md", ".csv", ".jpg", ".jpeg", ".png", ".gif", ".zip", ".rar", ".7z", ".eml", ".msg");
+        if (!allowed.contains(ext)) {
+            throw new BizException("不支持的文件类型：" + ext);
+        }
+        return ext;
+    }
+
     private Path resolvePath(String storedName) {
-        return Paths.get(uploadDir).resolve(storedName).normalize();
+        Path base = Paths.get(uploadDir).toAbsolutePath().normalize();
+        Path resolved = base.resolve(storedName).normalize();
+        if (!resolved.startsWith(base)) {
+            throw new BizException("非法文件路径");
+        }
+        return resolved;
     }
 
     private void deleteStoredFile(String storedName) {
@@ -266,6 +317,48 @@ public class DocumentService {
 
     private Document getById(Long id) {
         return documentRepository.findById(id).orElseThrow(() -> new BizException("文档不存在"));
+    }
+
+    // ---------- 权限 ----------
+
+    private void checkAccess(Document doc) {
+        if (CurrentUser.isManager()) {
+            return;
+        }
+        Long me = CurrentUser.id();
+        if (me.equals(doc.getUploadedBy())) {
+            return;
+        }
+        if (doc.getCaseId() != null) {
+            Case c = caseRepository.findById(doc.getCaseId()).orElse(null);
+            if (c != null && isCaseMember(c, me)) {
+                return;
+            }
+        }
+        if (doc.getClientId() != null) {
+            Client cl = clientRepository.findById(doc.getClientId()).orElse(null);
+            if (cl != null && me.equals(cl.getOwnerId())) {
+                return;
+            }
+        }
+        throw new BizException(403, "无权访问该文档");
+    }
+
+    private boolean isCaseMember(Case c, Long userId) {
+        return userId.equals(c.getLeadLawyerId())
+                || (c.getCoLawyerIds() != null && c.getCoLawyerIds().contains(userId));
+    }
+
+    private List<Long> myCaseIds(Long me) {
+        Specification<Case> spec = (root, q, cb) -> cb.or(
+                cb.equal(root.get("leadLawyerId"), me),
+                cb.isMember(me, root.get("coLawyerIds")));
+        return caseRepository.findAll(spec).stream().map(Case::getId).toList();
+    }
+
+    private List<Long> myClientIds(Long me) {
+        return clientRepository.findAll((root, q, cb) -> cb.equal(root.get("ownerId"), me))
+                .stream().map(Client::getId).toList();
     }
 
     private DocumentView toView(Document d) {

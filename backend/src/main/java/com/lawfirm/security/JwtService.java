@@ -21,6 +21,9 @@ public class JwtService {
 
     public JwtService(@Value("${app.jwt.secret}") String secret,
                       @Value("${app.jwt.expire-ms}") long expireMs) {
+        if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalStateException("JWT 密钥未配置或长度不足 32 字节，请设置环境变量 APP_JWT_SECRET（至少 32 字符）");
+        }
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.expireMs = expireMs;
     }

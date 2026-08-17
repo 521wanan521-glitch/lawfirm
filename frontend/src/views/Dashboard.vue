@@ -60,16 +60,31 @@ const router = useRouter()
 const store = useUserStore()
 const summary = ref({})
 
-const statCards = computed(() => [
-  { label: '案件总数', value: summary.value.totalCases ?? '-', icon: 'Files', color: '#409eff' },
-  { label: '办理中', value: summary.value.activeCases ?? '-', icon: 'Loading', color: '#67c23a' },
-  { label: '已结案', value: summary.value.closedCases ?? '-', icon: 'CircleCheck', color: '#909399' },
-  { label: '客户总数', value: summary.value.totalClients ?? '-', icon: 'User', color: '#e6a23c' },
-  { label: '待审批', value: summary.value.pendingApprovals ?? '-', icon: 'Stamp', color: '#f56c6c' },
-  { label: '待审核工时', value: summary.value.pendingTimeEntries ?? '-', icon: 'Clock', color: '#9c27b0' },
-  { label: '我的在办案件', value: summary.value.myOpenCases ?? '-', icon: 'Suitcase', color: '#00bcd4' },
-  { label: '本月营收(元)', value: summary.value.revenueThisMonth ?? '-', icon: 'Money', color: '#4caf50' }
-])
+const statCards = computed(() => {
+  const cards = []
+  if (store.isManager) {
+    cards.push(
+      { label: '案件总数', value: summary.value.totalCases ?? '-', icon: 'Files', color: '#409eff' },
+      { label: '办理中', value: summary.value.activeCases ?? '-', icon: 'Loading', color: '#67c23a' },
+      { label: '已结案', value: summary.value.closedCases ?? '-', icon: 'CircleCheck', color: '#909399' },
+      { label: '客户总数', value: summary.value.totalClients ?? '-', icon: 'User', color: '#e6a23c' },
+      { label: '本月营收(元)', value: summary.value.revenueThisMonth ?? '-', icon: 'Money', color: '#4caf50' }
+    )
+  }
+  cards.push(
+    { label: '我的在办案件', value: summary.value.myOpenCases ?? '-', icon: 'Suitcase', color: '#00bcd4' },
+    { label: '即将到来日程', value: summary.value.upcomingEvents ?? '-', icon: 'Calendar', color: '#409eff' }
+  )
+  cards.push(
+    store.isManager
+      ? { label: '待审批', value: summary.value.pendingApprovals ?? '-', icon: 'Stamp', color: '#f56c6c' }
+      : { label: '我的待审核工时', value: summary.value.pendingTimeEntries ?? '-', icon: 'Clock', color: '#9c27b0' }
+  )
+  if (store.isManager) {
+    cards.push({ label: '待审核工时', value: summary.value.pendingTimeEntries ?? '-', icon: 'Clock', color: '#9c27b0' })
+  }
+  return cards
+})
 
 const todos = computed(() => {
   const list = []

@@ -55,6 +55,12 @@ public class CaseService {
             if (type != null) predicates.add(cb.equal(root.get("type"), type));
             if (leadLawyerId != null) predicates.add(cb.equal(root.get("leadLawyerId"), leadLawyerId));
             if (priority != null) predicates.add(cb.equal(root.get("priority"), priority));
+            if (!CurrentUser.isManager()) {
+                Long me = CurrentUser.id();
+                predicates.add(cb.or(
+                        cb.equal(root.get("leadLawyerId"), me),
+                        cb.isMember(me, root.get("coLawyerIds"))));
+            }
             return cb.and(predicates.toArray(new Predicate[0]));
         };
         Page<Case> result = caseRepository.findAll(spec, pageable);
@@ -62,11 +68,13 @@ public class CaseService {
     }
 
     public CaseView detail(Long id) {
-        return toView(getById(id));
+        Case c = getById(id);
+        checkCaseAccess(c);
+        return toView(c);
     }
 
     public PageResult<CaseProgressView> progress(Long caseId, int page, int size) {
-        getById(caseId);
+        checkCaseAccess(getById(caseId));
         PageRequest pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<CaseProgress> result = progressRepository.findByCaseIdOrderByProgressDateDesc(caseId, pageable);
         Map<Long, String> userNames = userNameMap(result.getContent().stream()
@@ -90,6 +98,7 @@ public class CaseService {
     @Transactional
     public CaseView update(Long id, CaseRequest request) {
         Case c = getById(id);
+        checkCaseManage(c);
         if (c.getStatus() == CaseStatus.CLOSED || c.getStatus() == CaseStatus.ARCHIVED) {
             throw new BizException("已结案/已归档案件不可编辑");
         }
@@ -100,6 +109,7 @@ public class CaseService {
     @Transactional
     public void delete(Long id) {
         Case c = getById(id);
+        checkCaseManage(c);
         if (c.getStatus() == CaseStatus.ACTIVE) {
             throw new BizException("办理中的案件不可删除，可先结案");
         }
@@ -110,6 +120,7 @@ public class CaseService {
     @Transactional
     public CaseView updateStatus(Long id, CaseStatusRequest request) {
         Case c = getById(id);
+        checkCaseManage(c);
         CaseStatus oldStatus = c.getStatus();
         if (oldStatus == request.status()) {
             throw new BizException("案件已处于该状态");
@@ -134,6 +145,7 @@ public class CaseService {
     @Transactional
     public CaseProgressView addProgress(Long caseId, CaseProgressRequest request) {
         Case c = getById(caseId);
+        checkCaseAccess(c);
         CaseProgress p = addProgressRecord(c, request.content(), request.progressDate(), null);
         return new CaseProgressView(p.getId(), p.getContent(), p.getProgressDate(), p.getUserId(),
                 CurrentUser.user().getRealName(), p.getNewStatus(), p.getCreatedAt());
@@ -205,6 +217,29 @@ public class CaseService {
 
     private Case getById(Long id) {
         return caseRepository.findById(id).orElseThrow(() -> new BizException("案件不存在"));
+    }
+
+    /** 查看权限：主办/协办/管理员（合伙人） */
+    private void checkCaseAccess(Case c) {
+        if (CurrentUser.isManager()) {
+            return;
+        }
+        Long me = CurrentUser.id();
+        boolean member = me.equals(c.getLeadLawyerId())
+                || (c.getCoLawyerIds() != null && c.getCoLawyerIds().contains(me));
+        if (!member) {
+            throw new BizException(403, "无权访问该案件");
+        }
+    }
+
+    /** 管理权限：仅主办律师或管理员（合伙人） */
+    private void checkCaseManage(Case c) {
+        if (CurrentUser.isManager()) {
+            return;
+        }
+        if (!CurrentUser.id().equals(c.getLeadLawyerId())) {
+            throw new BizException(403, "仅主办律师或管理员可操作该案件");
+        }
     }
 
     private Map<Long, String> userNameMap(List<Long> ids) {

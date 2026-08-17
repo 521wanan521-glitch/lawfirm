@@ -63,7 +63,7 @@ public class DataSeeder implements CommandLineRunner {
         seedTemplates();
         seedDemo(admin, partner, lawyer1, lawyer2, paralegal, staff);
 
-        log.info("默认账号：admin/admin123、partner/partner123、lawyer1/lawyer123（请上线后立即修改密码）");
+        log.info("已初始化演示账号（admin/partner/lawyer1/lawyer2/paralegal/staff），请上线后立即修改默认密码");
     }
 
     private User createUser(String username, String rawPassword, String realName, User.Role role,

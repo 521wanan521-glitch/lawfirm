@@ -7,6 +7,7 @@ import com.lawfirm.billing.dto.TimeEntryRequest;
 import com.lawfirm.billing.dto.TimeEntryView;
 import com.lawfirm.cases.Case;
 import com.lawfirm.cases.CaseRepository;
+import com.lawfirm.client.Client;
 import com.lawfirm.client.ClientRepository;
 import com.lawfirm.common.BizException;
 import com.lawfirm.common.PageResult;
@@ -68,7 +69,7 @@ public class BillingService {
 
     @Transactional
     public TimeEntryView createTimeEntry(TimeEntryRequest request) {
-        validateCase(request.caseId());
+        checkCaseMember(request.caseId());
         TimeEntry t = new TimeEntry();
         t.setUserId(CurrentUser.id());
         apply(t, request);
@@ -81,6 +82,7 @@ public class BillingService {
         if (t.getStatus() != TimeEntryStatus.SUBMITTED) {
             throw new BizException("已审核或已开票的工时不可修改");
         }
+        checkCaseMember(request.caseId());
         apply(t, request);
         return toTimeView(timeEntryRepository.save(t), Map.of());
     }
@@ -125,6 +127,14 @@ public class BillingService {
             List<Predicate> predicates = new ArrayList<>();
             if (clientId != null) predicates.add(cb.equal(root.get("clientId"), clientId));
             if (status != null) predicates.add(cb.equal(root.get("status"), status));
+            if (!CurrentUser.isManager()) {
+                List<Long> clientIds = myClientIds();
+                if (clientIds.isEmpty()) {
+                    predicates.add(cb.disjunction());
+                } else {
+                    predicates.add(root.get("clientId").in(clientIds));
+                }
+            }
             return cb.and(predicates.toArray(new Predicate[0]));
         };
         Page<Invoice> result = invoiceRepository.findAll(spec, pageable);
@@ -134,6 +144,7 @@ public class BillingService {
 
     public InvoiceView invoiceDetail(Long id) {
         Invoice inv = invoiceRepository.findById(id).orElseThrow(() -> new BizException("账单不存在"));
+        checkInvoiceAccess(inv);
         return toInvoiceView(inv, userNameMap(List.of(inv.getUserId())));
     }
 
@@ -187,6 +198,7 @@ public class BillingService {
 
     @Transactional
     public InvoiceView updateInvoiceStatus(Long id, InvoiceStatusRequest request) {
+        requireManager();
         Invoice inv = invoiceRepository.findById(id).orElseThrow(() -> new BizException("账单不存在"));
         InvoiceStatus target = request.status();
         switch (target) {
@@ -250,8 +262,32 @@ public class BillingService {
         return t;
     }
 
-    private void validateCase(Long caseId) {
-        caseRepository.findById(caseId).orElseThrow(() -> new BizException("案件不存在"));
+    private void checkCaseMember(Long caseId) {
+        Case c = caseRepository.findById(caseId).orElseThrow(() -> new BizException("案件不存在"));
+        if (CurrentUser.isManager()) {
+            return;
+        }
+        Long me = CurrentUser.id();
+        boolean member = me.equals(c.getLeadLawyerId())
+                || (c.getCoLawyerIds() != null && c.getCoLawyerIds().contains(me));
+        if (!member) {
+            throw new BizException(403, "只能为自己主办或协办的案件记录工时");
+        }
+    }
+
+    private void checkInvoiceAccess(Invoice inv) {
+        if (CurrentUser.isManager()) {
+            return;
+        }
+        Client client = clientRepository.findById(inv.getClientId()).orElse(null);
+        if (client == null || !CurrentUser.id().equals(client.getOwnerId())) {
+            throw new BizException(403, "无权访问该账单");
+        }
+    }
+
+    private List<Long> myClientIds() {
+        return clientRepository.findAll((root, q, cb) -> cb.equal(root.get("ownerId"), CurrentUser.id()))
+                .stream().map(Client::getId).toList();
     }
 
     private void requireManager() {

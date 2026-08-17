@@ -94,7 +94,9 @@ const allMenus = router.options.routes
   .children.filter((r) => !r.meta?.hidden)
 
 const menus = computed(() =>
-  allMenus.filter((m) => !m.meta?.adminOnly || store.isAdmin)
+  allMenus.filter(
+    (m) => (!m.meta?.adminOnly || store.isAdmin) && (!m.meta?.managerOnly || store.isManager)
+  )
 )
 
 function onCommand(cmd) {

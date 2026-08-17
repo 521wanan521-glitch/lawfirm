@@ -36,4 +36,9 @@ public final class CurrentUser {
     public static boolean isAdmin() {
         return hasRole(User.Role.ADMIN);
     }
+
+    /** 管理员或合伙人（可查看全所数据） */
+    public static boolean isManager() {
+        return hasRole(User.Role.ADMIN) || hasRole(User.Role.PARTNER);
+    }
 }
