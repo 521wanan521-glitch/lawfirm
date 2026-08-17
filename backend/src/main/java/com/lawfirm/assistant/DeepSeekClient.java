@@ -49,7 +49,7 @@ public class DeepSeekClient {
     }
 
     /**
-     * 发起一次流式对话。
+     * 发起一次流式对话（使用系统默认 LLM 配置）。
      *
      * @param messages 完整消息列表（system + 历史 + 当前 user）
      * @param tools    工具定义（可为空数组）
@@ -57,12 +57,28 @@ public class DeepSeekClient {
      * @return 聚合后的完整文本与工具调用列表
      */
     public StreamResult stream(List<Map<String, Object>> messages, JsonNode tools, Consumer<String> onDelta) {
-        if (!StringUtils.hasText(props.getApiKey())) {
-            throw new BizException("未配置 DeepSeek API Key（环境变量 DEEPSEEK_API_KEY）");
+        return stream(messages, tools, onDelta, null);
+    }
+
+    /**
+     * 发起一次流式对话。
+     *
+     * @param target 用户自定义 LLM 目标（apiKey/baseUrl/model），为 null 时使用系统默认配置
+     */
+    public StreamResult stream(List<Map<String, Object>> messages, JsonNode tools, Consumer<String> onDelta,
+                               LlmConfigService.LlmTarget target) {
+        String apiKey = (target != null && StringUtils.hasText(target.apiKey()))
+                ? target.apiKey() : props.getApiKey();
+        String baseUrl = (target != null && StringUtils.hasText(target.baseUrl()))
+                ? target.baseUrl() : props.getBaseUrl();
+        String model = (target != null && StringUtils.hasText(target.model()))
+                ? target.model() : props.getModel();
+        if (!StringUtils.hasText(apiKey)) {
+            throw new BizException("未配置 LLM API Key：请在 AI 助手页面右上角「模型设置」中填写自己的 Key，或由管理员配置系统默认 Key");
         }
 
         ObjectNode body = mapper.createObjectNode();
-        body.put("model", props.getModel());
+        body.put("model", model);
         body.put("stream", true);
         body.put("temperature", props.getTemperature());
         body.put("max_tokens", props.getMaxTokens());
@@ -74,10 +90,10 @@ public class DeepSeekClient {
         body.put("tool_choice", "auto");
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(props.getBaseUrl() + "/chat/completions"))
+                .uri(URI.create(baseUrl + "/chat/completions"))
                 .timeout(Duration.ofSeconds(600))
                 .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + props.getApiKey())
+                .header("Authorization", "Bearer " + apiKey)
                 .POST(HttpRequest.BodyPublishers.ofString(body.toString(), StandardCharsets.UTF_8))
                 .build();
 

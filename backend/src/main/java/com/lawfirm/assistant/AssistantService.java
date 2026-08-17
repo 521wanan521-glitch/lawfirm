@@ -42,6 +42,7 @@ public class AssistantService {
     private final DeepSeekClient deepSeekClient;
     private final DeepSeekProperties props;
     private final AssistantToolService toolService;
+    private final LlmConfigService llmConfigService;
     private final ChatSessionRepository sessionRepository;
     private final ChatMessageRepository messageRepository;
     private final AssistantPendingActionRepository actionRepository;
@@ -55,6 +56,7 @@ public class AssistantService {
      */
     public SseEmitter chat(ChatRequest request) {
         Long userId = CurrentUser.id();
+        LlmConfigService.LlmTarget target = llmConfigService.resolve();
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         SseEmitter emitter = new SseEmitter(600000L);
         emitter.onTimeout(emitter::complete);
@@ -63,7 +65,7 @@ public class AssistantService {
         assistantExecutor.execute(() -> {
             SecurityContextHolder.getContext().setAuthentication(auth);
             try {
-                doChat(request, userId, emitter);
+                doChat(request, userId, target, emitter);
             } catch (Exception e) {
                 log.error("AI 对话异常", e);
                 send(emitter, "error", Map.of("message", e.getMessage() == null ? "对话失败" : e.getMessage()));
@@ -75,7 +77,7 @@ public class AssistantService {
         return emitter;
     }
 
-    private void doChat(ChatRequest request, Long userId, SseEmitter emitter) {
+    private void doChat(ChatRequest request, Long userId, LlmConfigService.LlmTarget target, SseEmitter emitter) {
         ChatSession session = resolveSession(request, userId);
         send(emitter, "meta", Map.of("sessionId", session.getId(), "title", session.getTitle()));
 
@@ -106,7 +108,7 @@ public class AssistantService {
         int maxRounds = Math.max(1, props.getMaxToolRounds());
         for (int round = 0; round < maxRounds; round++) {
             DeepSeekClient.StreamResult result = deepSeekClient.stream(messages, tools,
-                    delta -> send(emitter, "delta", Map.of("content", delta)));
+                    delta -> send(emitter, "delta", Map.of("content", delta)), target);
 
             // 追加助手消息
             Map<String, Object> assistantMsg = new LinkedHashMap<>();
@@ -157,7 +159,7 @@ public class AssistantService {
         // 兜底：达到最大轮数仍未给出最终回答时，不带工具再请求一次
         if (unresolvedTools || !StringUtils.hasText(finalContent)) {
             DeepSeekClient.StreamResult r = deepSeekClient.stream(messages, mapper.createArrayNode(),
-                    delta -> send(emitter, "delta", Map.of("content", delta)));
+                    delta -> send(emitter, "delta", Map.of("content", delta)), target);
             finalContent = r.content();
         }
 

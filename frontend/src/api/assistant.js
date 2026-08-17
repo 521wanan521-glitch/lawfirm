@@ -10,6 +10,11 @@ export const listPendingActions = (sessionId) => request.get('/assistant/actions
 export const confirmAction = (id) => request.post(`/assistant/actions/${id}/confirm`)
 export const cancelAction = (id) => request.post(`/assistant/actions/${id}/cancel`)
 
+/** 用户级 LLM 模型设置 */
+export const getLlmConfig = () => request.get('/assistant/llm-config')
+export const saveLlmConfig = (data) => request.put('/assistant/llm-config', data)
+export const deleteLlmConfig = () => request.delete('/assistant/llm-config')
+
 /**
  * 流式对话（SSE）。后端事件：meta / delta / tool / tool_result / done / error
  * @param {{sessionId:number|null, message:string, caseId?:number, clientId?:number, onEvent:function, signal?:AbortSignal}} params

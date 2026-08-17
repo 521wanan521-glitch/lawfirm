@@ -43,6 +43,9 @@
         </el-icon>
         <span class="chat-title">{{ currentTitle }}</span>
         <el-tag v-if="streaming" size="small" type="warning">思考中…</el-tag>
+        <el-tooltip content="模型设置：选择 LLM 厂商并填写自己的 API Key" placement="bottom">
+          <el-button size="small" text :icon="Setting" @click="openLlmDialog">模型设置</el-button>
+        </el-tooltip>
       </header>
 
       <div ref="scrollRef" class="messages">
@@ -131,6 +134,53 @@
         </el-button>
       </footer>
     </section>
+
+    <!-- 模型设置弹窗 -->
+    <el-dialog v-model="llmDialogVisible" title="模型设置" width="520px" :close-on-click-modal="false">
+      <el-alert
+        v-if="llmConfig.configured"
+        :title="`当前使用：我的配置（${providerName(llmConfig.provider)} / ${llmConfig.model}），Key：${llmConfig.apiKeyMasked}`"
+        type="success"
+        :closable="false"
+        style="margin-bottom: 12px"
+      />
+      <el-alert
+        v-else
+        title="当前使用：系统默认模型。填写下方配置后，你的对话将使用自己的模型与 Key。"
+        type="info"
+        :closable="false"
+        style="margin-bottom: 12px"
+      />
+      <el-form label-width="110px">
+        <el-form-item label="厂商">
+          <el-select v-model="llmForm.provider" style="width: 100%" @change="onProviderChange">
+            <el-option v-for="p in LLM_PROVIDERS" :key="p.key" :label="p.name" :value="p.key" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="接口地址">
+          <el-input v-model="llmForm.baseUrl" placeholder="OpenAI 兼容接口地址" />
+        </el-form-item>
+        <el-form-item label="模型名称">
+          <el-input v-model="llmForm.model" placeholder="如 deepseek-chat / qwen-plus / glm-4-flash" />
+        </el-form-item>
+        <el-form-item label="API Key">
+          <el-input
+            v-model="llmForm.apiKey"
+            type="password"
+            show-password
+            :placeholder="llmConfig.configured ? '留空则保持不变' : '填写你的 API Key'"
+          />
+        </el-form-item>
+      </el-form>
+      <div class="llm-tips">
+        提示：Key 将以加密方式保存，仅你的账号可见；工具调用（查案件/记工时等）在各家模型上的稳定性略有差异，推荐 DeepSeek。
+      </div>
+      <template #footer>
+        <el-button v-if="llmConfig.configured" type="danger" plain @click="clearLlm">清除配置（恢复系统默认）</el-button>
+        <el-button @click="llmDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveLlm">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -149,6 +199,7 @@ import {
   Loading,
   Plus,
   Promotion,
+  Setting,
   VideoPause,
   WarningFilled
 } from '@element-plus/icons-vue'
@@ -156,13 +207,26 @@ import {
   cancelAction,
   chatStream,
   confirmAction,
+  deleteLlmConfig,
   deleteSession,
+  getLlmConfig,
   listMessages,
   listPendingActions,
   listSessions,
-  renameSession
+  renameSession,
+  saveLlmConfig
 } from '@/api/assistant'
 import { renderMarkdown } from '@/utils/markdown'
+
+/** LLM 厂商预设（OpenAI 兼容接口） */
+const LLM_PROVIDERS = [
+  { key: 'deepseek', name: 'DeepSeek（推荐）', baseUrl: 'https://api.deepseek.com', model: 'deepseek-chat' },
+  { key: 'qwen', name: '通义千问（阿里云）', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus' },
+  { key: 'glm', name: '智谱 GLM', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-flash' },
+  { key: 'kimi', name: 'Kimi 月之暗面', baseUrl: 'https://api.moonshot.cn/v1', model: 'moonshot-v1-8k' },
+  { key: 'openai', name: 'OpenAI', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
+  { key: 'custom', name: '自定义（OpenAI 兼容接口）', baseUrl: '', model: '' }
+]
 
 const TOOL_LABELS = {
   list_my_cases: '查询案件',
@@ -409,6 +473,81 @@ function toolStatusText(t) {
   if (t.status === 'pending') return '待确认'
   if (t.status === 'cancelled') return '已取消'
   return t.ok === false ? '失败' : '已完成'
+}
+
+// ==================== 模型设置 ====================
+
+const llmDialogVisible = ref(false)
+const llmConfig = ref({ configured: false, provider: '', baseUrl: '', model: '', apiKeyMasked: '' })
+const llmForm = ref({ provider: 'deepseek', apiKey: '', baseUrl: '', model: '' })
+
+function providerName(key) {
+  const p = LLM_PROVIDERS.find((x) => x.key === key)
+  return p ? p.name : key
+}
+
+async function openLlmDialog() {
+  try {
+    const cfg = await getLlmConfig()
+    llmConfig.value = cfg || { configured: false, provider: '', baseUrl: '', model: '', apiKeyMasked: '' }
+  } catch (e) {
+    /* ignore */
+  }
+  if (llmConfig.value.configured) {
+    llmForm.value = {
+      provider: llmConfig.value.provider || 'custom',
+      apiKey: '',
+      baseUrl: llmConfig.value.baseUrl,
+      model: llmConfig.value.model
+    }
+  } else {
+    const d = LLM_PROVIDERS[0]
+    llmForm.value = { provider: d.key, apiKey: '', baseUrl: d.baseUrl, model: d.model }
+  }
+  llmDialogVisible.value = true
+}
+
+function onProviderChange(key) {
+  const p = LLM_PROVIDERS.find((x) => x.key === key)
+  if (p && key !== 'custom') {
+    llmForm.value.baseUrl = p.baseUrl
+    llmForm.value.model = p.model
+  }
+}
+
+async function saveLlm() {
+  const form = llmForm.value
+  if (!form.baseUrl.trim() || !form.model.trim()) {
+    ElMessage.warning('请填写接口地址和模型名称')
+    return
+  }
+  // 已有配置时允许留空 Key（表示不修改）
+  if (!form.apiKey.trim() && !llmConfig.value.configured) {
+    ElMessage.warning('请填写 API Key')
+    return
+  }
+  try {
+    await saveLlmConfig({
+      provider: form.provider,
+      apiKey: form.apiKey.trim(),
+      baseUrl: form.baseUrl.trim(),
+      model: form.model.trim()
+    })
+    ElMessage.success('已保存，之后的对话将使用你的模型配置')
+    llmDialogVisible.value = false
+  } catch (e) {
+    /* 拦截器已提示 */
+  }
+}
+
+async function clearLlm() {
+  try {
+    await deleteLlmConfig()
+    ElMessage.success('已清除，恢复系统默认模型')
+    llmDialogVisible.value = false
+  } catch (e) {
+    /* ignore */
+  }
 }
 
 function startRename(s) {
@@ -888,5 +1027,15 @@ function scrollToBottom() {
 
 .composer .el-textarea {
   flex: 1;
+}
+
+/* 模型设置弹窗 */
+.llm-tips {
+  color: #909399;
+  font-size: 12px;
+  line-height: 1.6;
+  background: #f5f7fa;
+  border-radius: 6px;
+  padding: 8px 10px;
 }
 </style>
