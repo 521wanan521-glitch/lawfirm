@@ -1,0 +1,13 @@
+# 本地工具目录（JDK/Maven/npm 缓存等，勿提交）
+.tools/
+
+# 构建产物
+backend/target/
+backend/data/
+frontend/node_modules/
+frontend/dist/
+
+# IDE
+.idea/
+.vscode/
+*.iml
