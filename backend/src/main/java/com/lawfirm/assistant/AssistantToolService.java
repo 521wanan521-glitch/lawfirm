@@ -96,6 +96,7 @@ public class AssistantToolService {
     private final ApprovalService approvalService;
     private final DashboardService dashboardService;
     private final UserService userService;
+    private final WebSearchService webSearchService;
 
     /** 工具执行结果 */
     public record ToolResult(String json, boolean ok) {
@@ -128,6 +129,7 @@ public class AssistantToolService {
                 case "get_my_schedule" -> getMySchedule(argumentsJson);
                 case "create_calendar_event" -> createCalendarEvent(argumentsJson);
                 case "search_knowledge" -> searchKnowledge(argumentsJson);
+                case "search_web" -> searchWeb(argumentsJson);
                 case "search_documents" -> searchDocuments(argumentsJson);
                 case "get_todo_approvals" -> getTodoApprovals(argumentsJson);
                 case "list_approval_templates" -> listApprovalTemplates(argumentsJson);
@@ -312,6 +314,15 @@ public class AssistantToolService {
         out.put("total", items.size());
         out.put("items", items);
         return write(out);
+    }
+
+    private String searchWeb(String argsJson) {
+        JsonNode a = parseArgs(argsJson);
+        String query = a.path("query").asText("");
+        if (!StringUtils.hasText(query)) {
+            throw new BizException("缺少搜索关键词");
+        }
+        return webSearchService.search(query);
     }
 
     private String searchDocuments(String argsJson) {
@@ -668,8 +679,12 @@ public class AssistantToolService {
         arr.add(tool("create_calendar_event", "为当前用户创建一条日程", p, "title", "startTime"));
 
         p = mapper.createObjectNode();
-        p.set("query", prop("string", "检索关键词，如「合同 违约金 管辖」"));
+        p.set("query", prop("string", "检索关键词，如「民法典 婚姻家庭编 司法解释」"));
         arr.add(tool("search_knowledge", "在知识库中检索办案经验、法规、文书模板等，返回标题与内容摘要", p, "query"));
+
+        p = mapper.createObjectNode();
+        p.set("query", prop("string", "要搜索的关键词，如「新公司法 注册资本 五年 认缴」"));
+        arr.add(tool("search_web", "联网搜索互联网公开信息（法律法规动态、司法解释、判例、新闻等），返回标题、摘要与来源链接。用户询问最新外部信息或知识库查不到时使用", p, "query"));
 
         p = mapper.createObjectNode();
         p.set("keyword", prop("string", "文档名称关键字"));

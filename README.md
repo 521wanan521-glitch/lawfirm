@@ -6,7 +6,7 @@
 
 | 模块 | 说明 |
 | --- | --- |
-| AI 助手 | 类 ChatGPT 的流式对话助手，接入 DeepSeek 大模型，通过工具调用查询/操作系统数据 |
+| AI 助手 | 类 ChatGPT 的流式对话助手，接入 DeepSeek 大模型，通过工具调用查询/操作系统数据，支持联网搜索（search_web 工具） |
 | 案件管理 | 立案、承办、进程跟踪、状态流转（待立案→办理中→结案→归档）、自动案号 |
 | 客户管理 CRM | 客户档案、联系人、跟进记录、客户分级 |
 | 计时计费 | 工时记录、审核流转、账单生成（草稿→开票→收款→作废） |
@@ -71,6 +71,15 @@ npm run dev
 | lawyer1 / lawyer2 | lawyer123 | 执业律师 |
 | paralegal | paralegal123 | 律师助理 |
 | staff | staff123 | 行政 |
+
+> 🌐 AI 助手内置「联网搜索」工具（免注册）：询问最新法律法规、司法解释、新闻等外部信息时会自动调用。
+> 默认依次尝试 搜狗 → 必应 → DuckDuckGo 公开搜索源，可通过环境变量调整：
+>
+> ```bash
+> # Windows PowerShell（可选）
+> $env:WEB_SEARCH_ENGINES="sogou,bing,duckduckgo"  # 搜索源顺序
+> $env:WEB_SEARCH_MAX_RESULTS="5"                   # 单次返回条数
+> ```
 
 > ⚠️ 正式上线后请立即修改所有默认密码。
 
