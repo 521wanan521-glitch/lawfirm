@@ -350,6 +350,8 @@ function handleEvent(event, data, assistantItem) {
     case 'tool_result': {
       const t = assistantItem.tools.find((x) => x.id === data.id)
       if (t) {
+        // 待确认类写操作：保持「待确认」状态等待用户点击确认/取消，不标记为完成
+        if (t.status === 'pending') break
         t.status = 'done'
         t.ok = data.ok
         t.result = data.result
@@ -499,6 +501,7 @@ function scrollToBottom() {
   flex: 1;
   overflow-y: auto;
   padding: 8px;
+  min-height: 0;
 }
 
 .session-item {
@@ -550,6 +553,7 @@ function scrollToBottom() {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
 }
 
 .chat-header {
@@ -580,6 +584,7 @@ function scrollToBottom() {
   flex: 1;
   overflow-y: auto;
   padding: 20px 16px;
+  min-height: 0;
 }
 
 .welcome {

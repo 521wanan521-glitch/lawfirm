@@ -1,0 +1,53 @@
+{
+  "name": "lawfirm-desktop",
+  "version": "1.0.0",
+  "description": "律所数字化办公系统 Windows 客户端",
+  "author": "lawfirm",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.lawfirm.desktop",
+    "productName": "律所办公系统",
+    "directories": {
+      "output": "dist"
+    },
+    "afterPack": "after-pack.js",
+    "files": [
+      "main.js",
+      "icon.png"
+    ],
+    "extraResources": [
+      {
+        "from": "config.json",
+        "to": "config.json"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "icon.png",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "律所办公系统",
+      "artifactName": "lawfirm-setup-${version}.exe"
+    }
+  }
+}
