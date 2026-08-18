@@ -63,6 +63,10 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private Boolean enabled = true;
 
+    /** 隐藏账号：不出现在成员列表与人员下拉中（用于测试/系统账号） */
+    @Column
+    private Boolean hidden = false;
+
     @Column
     private LocalDateTime lastLoginAt;
 }

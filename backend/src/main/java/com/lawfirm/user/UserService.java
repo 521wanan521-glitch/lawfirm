@@ -27,13 +27,13 @@ public class UserService {
         PageRequest pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<User> result;
         if (StringUtils.hasText(keyword) && role != null) {
-            result = userRepository.findByUsernameContainingOrRealNameContainingAndRole(keyword, keyword, role, pageable);
+            result = userRepository.findVisibleByKeywordAndRole(keyword, role, pageable);
         } else if (StringUtils.hasText(keyword)) {
-            result = userRepository.findByUsernameContainingOrRealNameContaining(keyword, keyword, pageable);
+            result = userRepository.findVisibleByKeyword(keyword, pageable);
         } else if (role != null) {
-            result = userRepository.findByRole(role, pageable);
+            result = userRepository.findVisibleByRole(role, pageable);
         } else {
-            result = userRepository.findAll(pageable);
+            result = userRepository.findVisible(pageable);
         }
         return PageResult.of(result, UserInfo::from);
     }
