@@ -8,6 +8,11 @@
   >
     <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
       <el-row :gutter="12">
+        <el-col :span="24">
+          <el-form-item label="案件名称" prop="title">
+            <el-input v-model="form.title" placeholder="请输入案件名称" maxlength="200" />
+          </el-form-item>
+        </el-col>
         <el-col :span="12">
           <el-form-item label="客户" prop="clientId">
             <el-select v-model="form.clientId" filterable placeholder="选择客户" style="width: 100%">
