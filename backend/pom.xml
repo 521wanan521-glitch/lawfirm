@@ -114,4 +114,22 @@
             </plugin>
         </plugins>
     </build>
+
+    <!-- 服务器构建 profile：排除本地密钥文件（application-local.yml 含本地 DeepSeek Key，禁止进入生产包） -->
+    <profiles>
+        <profile>
+            <id>server</id>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <filtering>false</filtering>
+                        <excludes>
+                            <exclude>application-local.yml</exclude>
+                        </excludes>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+    </profiles>
 </project>
