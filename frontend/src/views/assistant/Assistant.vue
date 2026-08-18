@@ -135,6 +135,26 @@
       </footer>
     </section>
 
+    <!-- 首次进入引导：未配置模型 Key 时提示 -->
+    <el-dialog
+      v-model="llmGuideVisible"
+      title="使用 AI 助手前，请先配置模型 Key"
+      width="460px"
+      :close-on-click-modal="false"
+      :show-close="false"
+    >
+      <p style="margin: 0 0 10px">你还没有配置自己的模型 Key，暂无法使用 AI 助手。</p>
+      <div class="llm-tips">
+        模型费用由各自的 Key 账号承担，不影响所里公用资源。推荐 DeepSeek：
+        到 platform.deepseek.com 注册并创建 API Key（充值几元即可长期使用），
+        然后点下方「去设置」填入。
+      </div>
+      <template #footer>
+        <el-button @click="llmGuideVisible = false">稍后再说</el-button>
+        <el-button type="primary" @click="llmGuideVisible = false; openLlmDialog()">去设置</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 模型设置弹窗 -->
     <el-dialog v-model="llmDialogVisible" title="模型设置" width="520px" :close-on-click-modal="false">
       <el-alert
@@ -295,7 +315,10 @@ const currentTitle = computed(() => {
   return s?.title || '新对话'
 })
 
-onMounted(loadSessions)
+onMounted(() => {
+  loadSessions()
+  checkLlmGuide()
+})
 
 async function loadSessions() {
   try {
@@ -478,8 +501,21 @@ function toolStatusText(t) {
 // ==================== 模型设置 ====================
 
 const llmDialogVisible = ref(false)
+const llmGuideVisible = ref(false)
 const llmConfig = ref({ configured: false, provider: '', baseUrl: '', model: '', apiKeyMasked: '' })
 const llmForm = ref({ provider: 'deepseek', apiKey: '', baseUrl: '', model: '' })
+
+/** 进入页面时检查：未配置模型 Key 则弹出引导 */
+async function checkLlmGuide() {
+  try {
+    const cfg = await getLlmConfig()
+    if (!cfg || !cfg.configured) {
+      llmGuideVisible.value = true
+    }
+  } catch (e) {
+    /* ignore */
+  }
+}
 
 function providerName(key) {
   const p = LLM_PROVIDERS.find((x) => x.key === key)
