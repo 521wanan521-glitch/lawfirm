@@ -642,7 +642,7 @@ function scrollToBottom() {
 <style scoped>
 .assistant {
   display: flex;
-  height: 100%;
+  flex: 1;
   min-height: 0;
   background: #f7f8fa;
   border-radius: 8px;

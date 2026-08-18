@@ -203,5 +203,7 @@ async function submitPwd() {
 .main {
   padding: 16px;
   overflow: auto;
+  display: flex;
+  flex-direction: column;
 }
 </style>
