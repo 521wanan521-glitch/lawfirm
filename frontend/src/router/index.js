@@ -25,6 +25,12 @@ const routes = [
         meta: { title: 'AI 助手', icon: 'ChatDotRound' }
       },
       {
+        path: 'help',
+        name: 'Help',
+        component: () => import('@/views/Help.vue'),
+        meta: { title: '帮助中心', icon: 'QuestionFilled' }
+      },
+      {
         path: 'cases',
         name: 'CaseList',
         component: () => import('@/views/case/CaseList.vue'),
