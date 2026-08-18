@@ -23,6 +23,18 @@ const md = new MarkdownIt({
   }
 })
 
+// 链接一律在新窗口/系统浏览器打开，避免覆盖当前系统页面
+const defaultLinkOpen =
+  md.renderer.rules.link_open ||
+  function (tokens, idx, options, env, self) {
+    return self.renderToken(tokens, idx, options)
+  }
+md.renderer.rules.link_open = function (tokens, idx, options, env, self) {
+  tokens[idx].attrSet('target', '_blank')
+  tokens[idx].attrSet('rel', 'noopener noreferrer')
+  return defaultLinkOpen(tokens, idx, options, env, self)
+}
+
 /** 渲染 Markdown 为安全的 HTML */
 export function renderMarkdown(text) {
   if (!text) return ''

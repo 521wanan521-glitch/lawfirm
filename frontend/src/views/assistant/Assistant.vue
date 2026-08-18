@@ -37,6 +37,7 @@
     <!-- 聊天区 -->
     <section class="chat-panel">
       <header class="chat-header">
+        <el-button size="small" text :icon="Back" @click="goBack">返回</el-button>
         <el-icon class="toggle" @click="showSidebar = !showSidebar">
           <Fold v-if="showSidebar" />
           <Expand v-else />
@@ -206,10 +207,12 @@
 
 <script setup>
 import { computed, nextTick, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   ArrowDown,
   ArrowUp,
+  Back,
   CircleCheck,
   CircleClose,
   Delete,
@@ -297,6 +300,15 @@ const suggestions = [
 ]
 
 const sessions = ref([])
+const router = useRouter()
+
+function goBack() {
+  if (window.history.length > 1) {
+    window.history.back()
+  } else {
+    router.push('/dashboard')
+  }
+}
 const currentSessionId = ref(null)
 const items = ref([])
 const input = ref('')
