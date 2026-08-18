@@ -23,9 +23,6 @@
           登 录
         </el-button>
       </el-form>
-      <div class="tips">
-        演示账号：admin / admin123（管理员）、lawyer1 / lawyer123（律师）
-      </div>
     </div>
   </div>
 </template>
