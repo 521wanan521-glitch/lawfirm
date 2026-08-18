@@ -168,7 +168,7 @@ const currentContent = computed(() => SECTIONS[activeTab.value] || '')
   background: #fff;
   border-radius: 8px;
   padding: 8px 20px 24px;
-  min-height: 100%;
+  flex: 1 0 auto;
 }
 
 .help-tabs {
