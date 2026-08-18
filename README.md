@@ -95,6 +95,7 @@ docker compose up -d --build
 
 ## 文档
 
+- [功能说明书（功能+角色维度）](docs/FEATURE_GUIDE.md)
 - [AI 助手使用说明（员工版）](docs/AI_ASSISTANT_GUIDE.md)
 - [阿里云部署指南](docs/DEPLOY_ALIYUN.md)
 - [用户使用手册](docs/USER_GUIDE.md)
