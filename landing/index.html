@@ -33,6 +33,12 @@
   .btn-ghost { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.5); }
   .btn-ghost:hover { border-color: #fff; }
 
+  /* 视频 */
+  .video { background: #fff; }
+  .video-box { max-width: 820px; margin: 0 auto; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 34px rgba(18,40,60,.14); background: #12283c; }
+  .video-box video { display: block; width: 100%; aspect-ratio: 16/9; }
+  .video-placeholder { display: flex; align-items: center; justify-content: center; aspect-ratio: 16/9; color: rgba(255,255,255,.75); font-size: 16px; letter-spacing: 1px; }
+
   /* Section 通用 */
   section { padding: 64px 0; }
   .sec-title { text-align: center; font-size: 30px; color: var(--navy); margin-bottom: 12px; font-weight: 700; }
@@ -103,6 +109,19 @@
     </div>
   </div>
 </div>
+
+<section class="video">
+  <div class="wrap">
+    <h2 class="sec-title">90 秒看懂这套系统</h2>
+    <p class="sec-desc">一段视频，快速了解它能帮律所解决什么</p>
+    <div class="video-box" id="videoBox">
+      <video id="demoVideo" controls preload="none" poster="">
+        <source src="/video/demo.mp4" type="video/mp4">
+        您的浏览器暂不支持视频播放，请升级浏览器。
+      </video>
+    </div>
+  </div>
+</section>
 
 <section class="pain">
   <div class="wrap">
@@ -182,6 +201,16 @@
 <footer>
   <div class="wrap">律所数字化办公系统 · 微信 hzh245689 · 电话 18437978060 · 邮箱 18437978060@163.com / 1303220384@qq.com</div>
 </footer>
+
+<script>
+  var demoVideo = document.getElementById('demoVideo');
+  if (demoVideo) {
+    demoVideo.addEventListener('error', function () {
+      var box = document.getElementById('videoBox');
+      if (box) box.innerHTML = '<div class="video-placeholder">🎬 产品演示视频即将上线</div>';
+    }, true);
+  }
+</script>
 
 </body>
 </html>
