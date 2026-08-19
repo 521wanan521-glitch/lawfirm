@@ -19,10 +19,12 @@ H2_JAR=$APP_DIR/h2/h2.jar
 
 NAME="${1:-}"
 EXT_PORT="${2:-}"
+KEEP_DEMO="${3:-}"
 
 if [ -z "$NAME" ] || [ -z "$EXT_PORT" ]; then
-  echo "用法: bash $0 <租户名> <对外端口>"
-  echo "示例: bash $0 lawfirm-b 8081"
+  echo "用法: bash $0 <租户名> <对外端口> [keep-demo]"
+  echo "示例: bash $0 lawfirm-b 8081          # 正式租户（清理演示数据）"
+  echo "      bash $0 lawfirm-demo 8081 keep-demo  # 演示租户（保留演示数据）"
   exit 1
 fi
 
@@ -115,14 +117,18 @@ if [ "$READY" != "1" ]; then
 fi
 echo "✓ 后端已就绪"
 
-# 5. 清理演示数据（保留默认账号 + 审批模板）
-echo -n "  清理演示数据..."
-java -cp "$H2_JAR" org.h2.tools.Shell \
-  -url "jdbc:h2:file:$TENANT_DIR/data/lawfirm-dev;AUTO_SERVER=TRUE" \
-  -user sa -password "" \
-  -sql "DELETE FROM CAL_PARTICIPANT; DELETE FROM CAL_EVENT; DELETE FROM CASE_CO_LAWYER; DELETE FROM CASE_PROGRESS; DELETE FROM CASE_CASE; DELETE FROM KNOW_ARTICLE; DELETE FROM CRM_INTERACTION; DELETE FROM CRM_CONTACT; DELETE FROM CRM_CLIENT;" \
-  >/dev/null 2>&1
-echo "✓"
+# 5. 清理演示数据（保留默认账号 + 审批模板）；keep-demo 则保留演示数据
+if [ "$KEEP_DEMO" = "keep-demo" ] || [ "$KEEP_DEMO" = "1" ]; then
+  echo "✓ 保留演示数据（演示租户）"
+else
+  echo -n "  清理演示数据..."
+  java -cp "$H2_JAR" org.h2.tools.Shell \
+    -url "jdbc:h2:file:$TENANT_DIR/data/lawfirm-dev;AUTO_SERVER=TRUE" \
+    -user sa -password "" \
+    -sql "DELETE FROM CAL_PARTICIPANT; DELETE FROM CAL_EVENT; DELETE FROM CASE_CO_LAWYER; DELETE FROM CASE_PROGRESS; DELETE FROM CASE_CASE; DELETE FROM KNOW_ARTICLE; DELETE FROM CRM_INTERACTION; DELETE FROM CRM_CONTACT; DELETE FROM CRM_CLIENT;" \
+    >/dev/null 2>&1
+  echo "✓"
+fi
 
 # 6. nginx 配置
 NGINX_CONF="/etc/nginx/conf.d/tenant-$NAME.conf"

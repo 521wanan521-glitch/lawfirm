@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>律所数字化办公系统 · 让每一家律所管理更轻松</title>
+<meta name="description" content="面向中小型律师事务所的一体化办公系统，覆盖案件、客户、计费、审批、知识库全流程，内置 AI 智能助手，轻量易部署，开箱即用。">
+<style>
+  :root {
+    --navy: #16324f;
+    --navy-2: #1f4e79;
+    --blue: #2e75b6;
+    --gold: #c9a86a;
+    --bg: #f5f7fa;
+    --text: #2b3a4a;
+    --muted: #5f6f80;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif; color: var(--text); background: #fff; line-height: 1.7; }
+  a { text-decoration: none; color: inherit; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  /* Hero */
+  .hero { background: linear-gradient(135deg, #12283c 0%, var(--navy) 50%, var(--navy-2) 100%); color: #fff; padding: 72px 0 88px; }
+  .hero .badge { display: inline-block; border: 1px solid rgba(201,168,106,.7); color: var(--gold); padding: 4px 14px; border-radius: 20px; font-size: 13px; letter-spacing: 1px; margin-bottom: 22px; }
+  .hero h1 { font-size: 40px; line-height: 1.3; margin-bottom: 18px; font-weight: 700; }
+  .hero h1 .hl { color: var(--gold); }
+  .hero .sub { font-size: 18px; color: rgba(255,255,255,.85); max-width: 680px; margin-bottom: 34px; }
+  .cta-row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .btn { display: inline-block; padding: 13px 30px; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; transition: .2s; }
+  .btn-primary { background: var(--gold); color: #12283c; }
+  .btn-primary:hover { background: #dbb877; }
+  .btn-ghost { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.5); }
+  .btn-ghost:hover { border-color: #fff; }
+
+  /* Section 通用 */
+  section { padding: 64px 0; }
+  .sec-title { text-align: center; font-size: 30px; color: var(--navy); margin-bottom: 12px; font-weight: 700; }
+  .sec-desc { text-align: center; color: var(--muted); font-size: 16px; margin-bottom: 44px; }
+
+  /* 痛点 */
+  .pain { background: var(--bg); }
+  .pain-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .pain-item { background: #fff; border-radius: 8px; padding: 22px 24px; border-left: 4px solid var(--blue); box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+  .pain-item h3 { font-size: 17px; color: var(--navy); margin-bottom: 6px; }
+  .pain-item p { color: var(--muted); font-size: 14px; }
+
+  /* 功能 */
+  .feat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .feat { border: 1px solid #e6ebf2; border-radius: 10px; padding: 26px 22px; transition: .2s; }
+  .feat:hover { border-color: var(--blue); box-shadow: 0 8px 24px rgba(31,78,121,.10); transform: translateY(-3px); }
+  .feat .ico { width: 46px; height: 46px; border-radius: 10px; background: #eef4fb; color: var(--navy-2); display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 14px; }
+  .feat h3 { font-size: 17px; color: var(--navy); margin-bottom: 8px; }
+  .feat p { font-size: 14px; color: var(--muted); }
+
+  /* AI 特色 */
+  .ai { background: linear-gradient(135deg, #16324f, #1f4e79); color: #fff; }
+  .ai .sec-title { color: #fff; }
+  .ai .sec-desc { color: rgba(255,255,255,.75); }
+  .ai-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .ai-item { background: rgba(255,255,255,.08); border-radius: 10px; padding: 24px; }
+  .ai-item h3 { font-size: 17px; margin-bottom: 8px; color: var(--gold); }
+  .ai-item p { font-size: 14px; color: rgba(255,255,255,.85); }
+
+  /* 演示 */
+  .demo { background: #fff; }
+  .demo-box { max-width: 680px; margin: 0 auto; background: var(--bg); border: 1px solid #e6ebf2; border-radius: 12px; padding: 30px 34px; }
+  .demo-box .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px dashed #d5dce6; }
+  .demo-box .row:last-child { border-bottom: none; }
+  .demo-box .k { color: var(--muted); font-size: 14px; }
+  .demo-box .v { font-weight: 600; color: var(--navy); font-size: 15px; }
+  .demo-box .v code { background: #eef4fb; padding: 2px 8px; border-radius: 4px; color: var(--navy-2); font-family: Consolas, monospace; }
+
+  /* CTA 底 */
+  .final { background: var(--navy); color: #fff; text-align: center; }
+  .final h2 { font-size: 28px; margin-bottom: 12px; }
+  .final p { color: rgba(255,255,255,.8); margin-bottom: 30px; }
+
+  footer { background: #10202f; color: rgba(255,255,255,.55); text-align: center; padding: 22px 0; font-size: 13px; }
+
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 30px; }
+    .pain-grid, .feat-grid, .ai-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="wrap">
+    <span class="badge">专为中小型律师事务所打造</span>
+    <h1>律所数字化办公系统<br>让每一家律所<span class="hl">管理更轻松</span></h1>
+    <p class="sub">案件、客户、工时计费、审批、知识库……一套系统全流程管好，内置 AI 智能助手帮你查数据、起草文书。轻量易部署，开箱即用。</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="http://47.107.62.86:8081" target="_blank">立即体验在线演示</a>
+      <a class="btn btn-ghost" href="#contact">咨询开通</a>
+    </div>
+  </div>
+</div>
+
+<section class="pain">
+  <div class="wrap">
+    <h2 class="sec-title">还在用表格和纸质卷宗管律所？</h2>
+    <p class="sec-desc">中小律所日常管理的几个真实痛点</p>
+    <div class="pain-grid">
+      <div class="pain-item"><h3>案件分散，进度不透明</h3><p>案件从立案到结案没有统一台账，案号手工编号易重复，合伙人难以掌握全所动态。</p></div>
+      <div class="pain-item"><h3>工时与账单对不上</h3><p>律师工时手工填报，审核汇总繁琐，账单收款难追溯，经营数据算不清楚。</p></div>
+      <div class="pain-item"><h3>审批靠纸质单据流转</h3><p>用章、请假、报销、立案靠线下签字，效率低、易丢失、难留痕。</p></div>
+      <div class="pain-item"><h3>客户散落在律师个人手中</h3><p>客户信息、跟进记录缺乏统一管理，律师离职带走客户，律所被动。</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2 class="sec-title">一体化功能，覆盖律所全流程</h2>
+    <p class="sec-desc">从办案到经营，一个系统全部搞定</p>
+    <div class="feat-grid">
+      <div class="feat"><div class="ico">⚖️</div><h3>案件管理</h3><p>立案建档、案号自动生成、状态流转、全程进程留痕，每个案子清晰可查。</p></div>
+      <div class="feat"><div class="ico">👥</div><h3>客户管理 CRM</h3><p>客户档案、联系人、跟进记录、客户分级，统一沉淀不再流失。</p></div>
+      <div class="feat"><div class="ico">💰</div><h3>工时计费</h3><p>工时记录、审核流转、账单生成与收款，营收一目了然。</p></div>
+      <div class="feat"><div class="ico">📁</div><h3>文档中心</h3><p>多级目录、上传下载、多版本管理，文档可关联案件与客户。</p></div>
+      <div class="feat"><div class="ico">📅</div><h3>日程安排</h3><p>月/周/日视图，开庭、会议、任务提醒，支持关联案件。</p></div>
+      <div class="feat"><div class="ico">✍️</div><h3>审批流程</h3><p>用章、请假、报销、立案等模板，发起→审批→归档全流程。</p></div>
+      <div class="feat"><div class="ico">📚</div><h3>知识库</h3><p>办案经验、法规、文书模板沉淀，团队经验可复用。</p></div>
+      <div class="feat"><div class="ico">📊</div><h3>统计报表</h3><p>案件分布、营收趋势、律师工时排行，经营决策有依据。</p></div>
+      <div class="feat"><div class="ico">🛡️</div><h3>权限安全</h3><p>5 种角色 + 数据范围授权，律师只能看到自己权限内的数据。</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="ai">
+  <div class="wrap">
+    <h2 class="sec-title">内置 AI 智能助手</h2>
+    <p class="sec-desc">不只是工具，更是每个律师的智能助理</p>
+    <div class="ai-row">
+      <div class="ai-item"><h3>查数据</h3><p>一句话查询案件、客户、工时、日程、审批，数据直接连所内真实业务。</p></div>
+      <div class="ai-item"><h3>起草文书</h3><p>律师函、起诉状、合同等文书起草，联网检索最新法规，附来源链接。</p></div>
+      <div class="ai-item"><h3>安全可控</h3><p>所有写操作生成"待确认"卡片，人工确认后才生效，且不提供删除能力。</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="demo">
+  <div class="wrap">
+    <h2 class="sec-title">免费在线演示</h2>
+    <p class="sec-desc">无需注册，用下面的演示账号直接登录体验</p>
+    <div class="demo-box">
+      <div class="row"><span class="k">演示地址</span><span class="v"><a href="http://47.107.62.86:8081" target="_blank">http://47.107.62.86:8081</a></span></div>
+      <div class="row"><span class="k">管理员账号</span><span class="v"><code>admin</code> / <code>admin123</code></span></div>
+      <div class="row"><span class="k">律师账号</span><span class="v"><code>lawyer1</code> / <code>lawyer123</code></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="final" id="contact">
+  <div class="wrap">
+    <h2>让您的律所，从今天开始数字化</h2>
+    <p>支持私有化部署 · 数据独立安全 · 可定制 · 提供培训与维护</p>
+    <a class="btn btn-primary" href="http://47.107.62.86:8081" target="_blank">立即体验演示</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">律所数字化办公系统 · 咨询请扫描微信或邮件联系</div>
+</footer>
+
+</body>
+</html>
