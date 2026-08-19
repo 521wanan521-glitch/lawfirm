@@ -71,6 +71,12 @@
   .demo-box .v { font-weight: 600; color: var(--navy); font-size: 15px; }
   .demo-box .v code { background: #eef4fb; padding: 2px 8px; border-radius: 4px; color: var(--navy-2); font-family: Consolas, monospace; }
 
+  /* 联系 */
+  .contact { background: var(--bg); }
+  .contact-grid { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
+  .contact-item { background: #fff; border: 1px solid #e6ebf2; border-radius: 8px; padding: 16px 30px; font-size: 15px; color: var(--navy); }
+  .contact-item b { color: var(--muted); font-weight: 500; margin-right: 8px; }
+
   /* CTA 底 */
   .final { background: var(--navy); color: #fff; text-align: center; }
   .final h2 { font-size: 28px; margin-bottom: 12px; }
@@ -153,7 +159,19 @@
   </div>
 </section>
 
-<section class="final" id="contact">
+<section class="contact" id="contact">
+  <div class="wrap">
+    <h2 class="sec-title">联系我们</h2>
+    <p class="sec-desc">咨询开通、预约演示，欢迎随时联系</p>
+    <div class="contact-grid">
+      <div class="contact-item"><b>微信</b>hzh245689</div>
+      <div class="contact-item"><b>电话</b>18437978060</div>
+      <div class="contact-item"><b>邮箱</b>18437978060@163.com</div>
+    </div>
+  </div>
+</section>
+
+<section class="final">
   <div class="wrap">
     <h2>让您的律所，从今天开始数字化</h2>
     <p>支持私有化部署 · 数据独立安全 · 可定制 · 提供培训与维护</p>
@@ -162,7 +180,7 @@
 </section>
 
 <footer>
-  <div class="wrap">律所数字化办公系统 · 咨询请扫描微信或邮件联系</div>
+  <div class="wrap">律所数字化办公系统 · 微信 hzh245689 · 电话 18437978060 · 邮箱 18437978060@163.com / 1303220384@qq.com</div>
 </footer>
 
 </body>
