@@ -14,6 +14,8 @@ public record CaseView(
         Long id,
         String caseNo,
         String title,
+        String plaintiff,
+        String defendant,
         Long clientId,
         String clientName,
         CaseType type,
@@ -33,9 +35,9 @@ public record CaseView(
         LocalDateTime createdAt
 ) {
     public static CaseView from(Case c, String clientName, String leadLawyerName, List<String> coLawyerNames) {
-        return new CaseView(c.getId(), c.getCaseNo(), c.getTitle(), c.getClientId(), clientName,
-                c.getType(), c.getStatus(), c.getPriority(), c.getLeadLawyerId(), leadLawyerName,
-                c.getCoLawyerIds(), coLawyerNames, c.getCourt(), c.getCaseAmount(), c.getFilingDate(),
-                c.getCloseDate(), c.getDescription(), c.getResult(), c.getFee(), c.getCreatedAt());
+        return new CaseView(c.getId(), c.getCaseNo(), c.getTitle(), c.getPlaintiff(), c.getDefendant(),
+                c.getClientId(), clientName, c.getType(), c.getStatus(), c.getPriority(), c.getLeadLawyerId(),
+                leadLawyerName, c.getCoLawyerIds(), coLawyerNames, c.getCourt(), c.getCaseAmount(),
+                c.getFilingDate(), c.getCloseDate(), c.getDescription(), c.getResult(), c.getFee(), c.getCreatedAt());
     }
 }

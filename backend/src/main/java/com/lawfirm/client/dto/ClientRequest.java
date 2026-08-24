@@ -15,6 +15,7 @@ public record ClientRequest(
         Client.Level level,
         String source,
         Long ownerId,
-        String remark
+        String remark,
+        Boolean consultant
 ) {
 }

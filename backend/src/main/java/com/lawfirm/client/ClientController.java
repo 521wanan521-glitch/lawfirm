@@ -33,9 +33,10 @@ public class ClientController {
     public ApiResponse<PageResult<ClientView>> page(@RequestParam(required = false) String keyword,
                                                     @RequestParam(required = false) Client.Level level,
                                                     @RequestParam(required = false) Long ownerId,
+                                                    @RequestParam(required = false) Boolean consultant,
                                                     @RequestParam(defaultValue = "1") int page,
                                                     @RequestParam(defaultValue = "10") int size) {
-        return ApiResponse.ok(clientService.page(keyword, level, ownerId, page, size));
+        return ApiResponse.ok(clientService.page(keyword, level, ownerId, consultant, page, size));
     }
 
     @GetMapping("/{id}")

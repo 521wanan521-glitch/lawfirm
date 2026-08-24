@@ -66,4 +66,8 @@ public class Client extends BaseEntity {
 
     @Column(length = 500)
     private String remark;
+
+    /** 法律顾问单位（VIP 固定客户，与普通当事人区分） */
+    @Column
+    private Boolean consultant = false;
 }

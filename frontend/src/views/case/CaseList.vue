@@ -31,6 +31,8 @@
     <el-table v-loading="loading" :data="items" @row-click="(row) => $router.push(`/cases/${row.id}`)" style="cursor: pointer">
       <el-table-column prop="caseNo" label="案号" width="130" />
       <el-table-column prop="title" label="案件名称" min-width="200" show-overflow-tooltip />
+      <el-table-column prop="plaintiff" label="原告" min-width="130" show-overflow-tooltip />
+      <el-table-column prop="defendant" label="被告" min-width="130" show-overflow-tooltip />
       <el-table-column label="类型" width="100">
         <template #default="{ row }">{{ caseTypeLabel(row.type) }}</template>
       </el-table-column>
@@ -71,6 +73,16 @@
           <el-col :span="24">
             <el-form-item label="案件名称" prop="title">
               <el-input v-model="form.title" placeholder="请输入案件名称" maxlength="200" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="原告">
+              <el-input v-model="form.plaintiff" placeholder="原告" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="被告">
+              <el-input v-model="form.defendant" placeholder="被告" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -204,6 +216,8 @@ function openEdit(row) {
   form.value = {
     clientId: row.clientId,
     title: row.title,
+    plaintiff: row.plaintiff,
+    defendant: row.defendant,
     type: row.type,
     priority: row.priority,
     leadLawyerId: row.leadLawyerId,

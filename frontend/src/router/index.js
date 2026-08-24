@@ -43,6 +43,12 @@ const routes = [
         meta: { title: '客户管理', icon: 'User' }
       },
       {
+        path: 'consultants',
+        name: 'ConsultantList',
+        component: () => import('@/views/client/ConsultantList.vue'),
+        meta: { title: '法律顾问单位', icon: 'OfficeBuilding' }
+      },
+      {
         path: 'clients/:id',
         name: 'ClientDetail',
         component: () => import('@/views/client/ClientDetail.vue'),

@@ -13,6 +13,11 @@ spring:
     date-format: yyyy-MM-dd HH:mm:ss
     serialization:
       write-dates-as-timestamps: false
+  servlet:
+    multipart:
+      # 文件上传大小限制（默认仅 1MB，会导致多页文档上传失败）
+      max-file-size: 200MB
+      max-request-size: 200MB
 
 server:
   port: ${SERVER_PORT:8080}

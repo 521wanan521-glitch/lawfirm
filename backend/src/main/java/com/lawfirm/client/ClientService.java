@@ -38,7 +38,7 @@ public class ClientService {
     private final UserRepository userRepository;
     private final CaseRepository caseRepository;
 
-    public PageResult<ClientView> page(String keyword, Client.Level level, Long ownerId, int page, int size) {
+    public PageResult<ClientView> page(String keyword, Client.Level level, Long ownerId, Boolean consultant, int page, int size) {
         PageRequest pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Specification<Client> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -55,6 +55,9 @@ public class ClientService {
             }
             if (ownerId != null) {
                 predicates.add(cb.equal(root.get("ownerId"), ownerId));
+            }
+            if (consultant != null) {
+                predicates.add(cb.equal(root.get("consultant"), consultant));
             }
             if (!CurrentUser.isManager()) {
                 predicates.add(cb.equal(root.get("ownerId"), CurrentUser.id()));
@@ -173,6 +176,7 @@ public class ClientService {
         client.setSource(request.source());
         client.setOwnerId(request.ownerId());
         client.setRemark(request.remark());
+        client.setConsultant(Boolean.TRUE.equals(request.consultant()));
     }
 
     private void apply(Contact contact, ContactRequest request) {
@@ -188,7 +192,7 @@ public class ClientService {
         long caseCount = caseRepository.countByClientId(c.getId());
         return new ClientView(c.getId(), c.getName(), c.getType(), c.getIdNumber(), c.getIndustry(),
                 c.getAddress(), c.getPhone(), c.getEmail(), c.getLevel(), c.getSource(), c.getOwnerId(),
-                userNames.get(c.getOwnerId()), c.getRemark(), contactCount, caseCount, c.getCreatedAt());
+                userNames.get(c.getOwnerId()), c.getRemark(), c.getConsultant(), contactCount, caseCount, c.getCreatedAt());
     }
 
     private Client getById(Long id) {

@@ -14,6 +14,16 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
+          <el-form-item label="原告">
+            <el-input v-model="form.plaintiff" placeholder="原告" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="被告">
+            <el-input v-model="form.defendant" placeholder="被告" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
           <el-form-item label="客户" prop="clientId">
             <el-select v-model="form.clientId" filterable placeholder="选择客户" style="width: 100%">
               <el-option v-for="c in clients" :key="c.id" :label="c.name" :value="c.id" />
@@ -128,6 +138,8 @@ onMounted(async () => {
     Object.assign(form, {
       clientId: props.caseRow.clientId,
       title: props.caseRow.title,
+      plaintiff: props.caseRow.plaintiff,
+      defendant: props.caseRow.defendant,
       type: props.caseRow.type,
       priority: props.caseRow.priority,
       leadLawyerId: props.caseRow.leadLawyerId,

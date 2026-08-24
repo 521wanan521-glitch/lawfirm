@@ -189,6 +189,8 @@ public class CaseService {
         }
         c.setClientId(request.clientId());
         c.setTitle(request.title());
+        c.setPlaintiff(request.plaintiff());
+        c.setDefendant(request.defendant());
         c.setType(request.type());
         c.setPriority(request.priority() == null ? Priority.MEDIUM : request.priority());
         c.setLeadLawyerId(request.leadLawyerId());

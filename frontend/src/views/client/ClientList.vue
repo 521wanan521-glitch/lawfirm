@@ -39,6 +39,12 @@
           </el-tag>
         </template>
       </el-table-column>
+      <el-table-column label="顾问单位" width="90" align="center">
+        <template #default="{ row }">
+          <el-tag v-if="row.consultant" size="small" type="warning" effect="dark">VIP</el-tag>
+          <span v-else class="text-muted">-</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="industry" label="行业" width="110" show-overflow-tooltip />
       <el-table-column prop="phone" label="联系电话" width="130" />
       <el-table-column prop="ownerName" label="负责人" width="100" />
@@ -118,6 +124,11 @@
               </el-select>
             </el-form-item>
           </el-col>
+          <el-col :span="12">
+            <el-form-item label="法律顾问单位">
+              <el-switch v-model="form.consultant" active-text="是" />
+            </el-form-item>
+          </el-col>
           <el-col :span="24">
             <el-form-item label="联系地址">
               <el-input v-model="form.address" />
@@ -180,7 +191,7 @@ const rules = {
 
 function openCreate() {
   editing.value = null
-  form.value = { type: 'COMPANY', level: 'C' }
+  form.value = { type: 'COMPANY', level: 'C', consultant: false }
   dialogVisible.value = true
 }
 

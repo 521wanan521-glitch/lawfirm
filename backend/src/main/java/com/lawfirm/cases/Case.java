@@ -39,6 +39,14 @@ public class Case extends BaseEntity {
     @Column(nullable = false, length = 200)
     private String title;
 
+    /** 原告 */
+    @Column(length = 200)
+    private String plaintiff;
+
+    /** 被告 */
+    @Column(length = 200)
+    private String defendant;
+
     @Column(nullable = false)
     private Long clientId;
 

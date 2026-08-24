@@ -18,6 +18,7 @@ public record ClientView(
         Long ownerId,
         String ownerName,
         String remark,
+        Boolean consultant,
         long contactCount,
         long caseCount,
         LocalDateTime createdAt

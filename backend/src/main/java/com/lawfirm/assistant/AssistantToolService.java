@@ -205,7 +205,7 @@ public class AssistantToolService {
     private String searchClients(String argsJson) {
         JsonNode a = parseArgs(argsJson);
         String keyword = a.path("keyword").asText("");
-        PageResult<ClientView> page = clientService.page(keyword, null, null, 1, 20);
+        PageResult<ClientView> page = clientService.page(keyword, null, null, null, 1, 20);
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("total", page.getTotal());
         out.put("items", page.getItems());
@@ -389,8 +389,8 @@ public class AssistantToolService {
         LocalDate filingDate = hasDate(a, "filingDate") ? LocalDate.parse(a.get("filingDate").asText()) : null;
         String description = optText(a, "description");
         BigDecimal fee = asDecimal(a, "fee");
-        CaseView v = caseService.create(new CaseRequest(clientId, title, type, priority,
-                leadLawyerId, coLawyerIds, court, caseAmount, filingDate, description, fee));
+        CaseView v = caseService.create(new CaseRequest(clientId, title, optText(a, "plaintiff"), optText(a, "defendant"),
+                type, priority, leadLawyerId, coLawyerIds, court, caseAmount, filingDate, description, fee));
         return write(v);
     }
 
@@ -408,8 +408,8 @@ public class AssistantToolService {
         LocalDate filingDate = hasDate(a, "filingDate") ? LocalDate.parse(a.get("filingDate").asText()) : null;
         String description = optText(a, "description");
         BigDecimal fee = asDecimal(a, "fee");
-        CaseView v = caseService.update(id, new CaseRequest(clientId, title, type, priority,
-                leadLawyerId, coLawyerIds, court, caseAmount, filingDate, description, fee));
+        CaseView v = caseService.update(id, new CaseRequest(clientId, title, optText(a, "plaintiff"), optText(a, "defendant"),
+                type, priority, leadLawyerId, coLawyerIds, court, caseAmount, filingDate, description, fee));
         return write(v);
     }
 
@@ -436,8 +436,9 @@ public class AssistantToolService {
         String source = optText(a, "source");
         Long ownerId = a.hasNonNull("ownerId") ? a.get("ownerId").asLong() : CurrentUser.id();
         String remark = optText(a, "remark");
+        Boolean consultant = a.hasNonNull("consultant") ? a.get("consultant").asBoolean() : false;
         ClientView v = clientService.create(new ClientRequest(name, type, idNumber, industry,
-                address, phone, email, level, source, ownerId, remark));
+                address, phone, email, level, source, ownerId, remark, consultant));
         return write(v);
     }
 
@@ -455,8 +456,9 @@ public class AssistantToolService {
         String source = optText(a, "source");
         Long ownerId = a.hasNonNull("ownerId") ? a.get("ownerId").asLong() : CurrentUser.id();
         String remark = optText(a, "remark");
+        Boolean consultant = a.hasNonNull("consultant") ? a.get("consultant").asBoolean() : false;
         ClientView v = clientService.update(id, new ClientRequest(name, type, idNumber, industry,
-                address, phone, email, level, source, ownerId, remark));
+                address, phone, email, level, source, ownerId, remark, consultant));
         return write(v);
     }
 
