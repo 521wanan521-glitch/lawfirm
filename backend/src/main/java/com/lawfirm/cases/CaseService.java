@@ -204,8 +204,18 @@ public class CaseService {
 
     private synchronized String generateCaseNo() {
         int year = Year.now().getValue();
-        long count = caseRepository.countByCaseNoStartingWith("LF" + year + "-");
-        return String.format("LF%d-%04d", year, count + 1);
+        String prefix = "LF" + year + "-";
+        // 用最大案号 + 1，而不是数量 + 1：避免删除案件后数量减少导致案号撞号
+        String maxCaseNo = caseRepository.findMaxCaseNo(prefix + "%");
+        int next = 1;
+        if (maxCaseNo != null && maxCaseNo.length() > prefix.length()) {
+            try {
+                next = Integer.parseInt(maxCaseNo.substring(prefix.length())) + 1;
+            } catch (NumberFormatException ignored) {
+                // 异常时回退为 1
+            }
+        }
+        return String.format("LF%d-%04d", year, next);
     }
 
     private CaseView toView(Case c) {
