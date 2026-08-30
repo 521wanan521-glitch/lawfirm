@@ -41,3 +41,39 @@ export const cancelInstance = (id) => put(`/approvals/instances/${id}/cancel`)
 // ============ 用户选项（下拉用） ============
 export const userOptions = () => get('/users/options')
 export const caseOptions = () => get('/cases/my', { page: 1, size: 200 })
+
+// ============ 工时 ============
+export const pageTimeEntries = (params) => get('/billing/time-entries', params)
+export const createTimeEntry = (data) => post('/billing/time-entries', data)
+export const submitTimeEntry = (id) => put(`/billing/time-entries/${id}/submit`)
+export const approveTimeEntry = (id) => put(`/billing/time-entries/${id}/approve`)
+export const rejectTimeEntry = (id) => put(`/billing/time-entries/${id}/reject`)
+
+// ============ 账单 ============
+export const pageInvoices = (params) => get('/billing/invoices', params)
+
+// ============ 文档 ============
+export const pageDocuments = (params) => get('/documents', params)
+export const getVersions = (id) => get(`/documents/${id}/versions`)
+export const folderTree = () => get('/documents/folders')
+
+// ============ 知识库 ============
+export const pageArticles = (params) => get('/knowledge', params)
+export const getArticle = (id) => get(`/knowledge/${id}`)
+
+// ============ 统计 ============
+export const getStats = () => get('/dashboard/stats')
+
+// ============ 成员 ============
+export const pageUsers = (params) => get('/users', params)
+export const resetPassword = (id, data) => put(`/users/${id}/password`, data)
+export const setUserStatus = (id, enabled) => put(`/users/${id}/status`, null, { params: { enabled } })
+
+// ============ AI 助手 ============
+export const listSessions = () => get('/assistant/sessions')
+export const listMessages = (id) => get(`/assistant/sessions/${id}/messages`)
+export const listPendingActions = (sessionId) => get('/assistant/actions', { sessionId })
+export const confirmAction = (id) => post(`/assistant/actions/${id}/confirm`)
+export const cancelAction = (id) => post(`/assistant/actions/${id}/cancel`)
+export const getLlmConfig = () => get('/assistant/llm-config')
+export const saveLlmConfig = (data) => put('/assistant/llm-config', data)

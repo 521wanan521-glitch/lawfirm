@@ -49,6 +49,22 @@
         <text class="q-icon">📅</text>
         <text class="q-text">日程安排</text>
       </view>
+      <view class="quick-item" @click="go('/pages/assistant/chat')">
+        <text class="q-icon">🤖</text>
+        <text class="q-text">AI 助手</text>
+      </view>
+      <view class="quick-item" @click="go('/pages/time/list')">
+        <text class="q-icon">⏱️</text>
+        <text class="q-text">工时记录</text>
+      </view>
+      <view class="quick-item" @click="go('/pages/invoice/list')">
+        <text class="q-icon">💰</text>
+        <text class="q-text">账单管理</text>
+      </view>
+      <view class="quick-item" @click="go('/pages/document/list')">
+        <text class="q-icon">📄</text>
+        <text class="q-text">文档中心</text>
+      </view>
     </view>
 
     <!-- 最近案件 -->
@@ -193,23 +209,25 @@ export default {
 
   .quick {
     display: flex;
+    flex-wrap: wrap;
     background: #fff;
     border-radius: 20rpx;
     margin: 20rpx 24rpx;
-    padding: 30rpx 0;
+    padding: 30rpx 0 10rpx;
 
     .quick-item {
-      flex: 1;
+      width: 25%;
       display: flex;
       flex-direction: column;
       align-items: center;
+      margin-bottom: 24rpx;
 
       .q-icon {
-        font-size: 48rpx;
+        font-size: 46rpx;
         margin-bottom: 10rpx;
       }
       .q-text {
-        font-size: 24rpx;
+        font-size: 22rpx;
         color: #606266;
       }
     }

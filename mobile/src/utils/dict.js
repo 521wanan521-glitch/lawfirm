@@ -76,6 +76,35 @@ export const APPROVAL_STATUS_MAP = {
   CANCELLED: '已撤销'
 }
 
+export const TIME_STATUS_MAP = {
+  SUBMITTED: '待审核',
+  APPROVED: '已审核',
+  BILLED: '已开票'
+}
+
+export const INVOICE_STATUS_MAP = {
+  DRAFT: '草稿',
+  ISSUED: '已开票',
+  PAID: '已收款',
+  VOID: '已作废'
+}
+
+export const DOC_CATEGORY_MAP = {
+  CONTRACT: '合同',
+  EVIDENCE: '证据材料',
+  JUDGMENT: '裁判文书',
+  LEGAL_DOC: '法律文书',
+  OTHER: '其他'
+}
+
+export const KNOWLEDGE_CATEGORY_MAP = {
+  EXPERIENCE: '办案经验',
+  LAW: '法律法规',
+  TEMPLATE: '文书模板',
+  TRAINING: '培训资料',
+  OTHER: '其他'
+}
+
 export const roleLabel = (role) => ROLE_MAP[role] || role || '-'
 export const caseStatusLabel = (s) => CASE_STATUS_MAP[s] || s || '-'
 export const caseTypeLabel = (t) => CASE_TYPE_MAP[t] || t || '-'
@@ -85,3 +114,7 @@ export const clientLevelLabel = (l) => CLIENT_LEVEL_MAP[l] || l || '-'
 export const eventTypeLabel = (t) => EVENT_TYPE_MAP[t] || t || '-'
 export const approvalTypeLabel = (t) => APPROVAL_TYPE_MAP[t] || t || '-'
 export const approvalStatusLabel = (s) => APPROVAL_STATUS_MAP[s] || s || '-'
+export const timeStatusLabel = (s) => TIME_STATUS_MAP[s] || s || '-'
+export const invoiceStatusLabel = (s) => INVOICE_STATUS_MAP[s] || s || '-'
+export const docCategoryLabel = (c) => DOC_CATEGORY_MAP[c] || c || '-'
+export const knowledgeCategoryLabel = (c) => KNOWLEDGE_CATEGORY_MAP[c] || c || '-'

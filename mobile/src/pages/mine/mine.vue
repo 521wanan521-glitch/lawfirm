@@ -16,9 +16,39 @@
         <text class="m-name">客户管理</text>
         <text class="m-arrow">›</text>
       </view>
+      <view class="menu-item" @click="go('/pages/time/list')">
+        <text class="m-icon">⏱️</text>
+        <text class="m-name">工时记录</text>
+        <text class="m-arrow">›</text>
+      </view>
+      <view class="menu-item" @click="go('/pages/invoice/list')">
+        <text class="m-icon">💰</text>
+        <text class="m-name">账单管理</text>
+        <text class="m-arrow">›</text>
+      </view>
+      <view class="menu-item" @click="go('/pages/document/list')">
+        <text class="m-icon">📄</text>
+        <text class="m-name">文档中心</text>
+        <text class="m-arrow">›</text>
+      </view>
       <view class="menu-item" @click="go('/pages/approval/list')">
         <text class="m-icon">✍️</text>
         <text class="m-name">审批流程</text>
+        <text class="m-arrow">›</text>
+      </view>
+      <view class="menu-item" @click="go('/pages/knowledge/list')">
+        <text class="m-icon">📚</text>
+        <text class="m-name">知识库</text>
+        <text class="m-arrow">›</text>
+      </view>
+      <view v-if="store.isManager" class="menu-item" @click="go('/pages/stats/stats')">
+        <text class="m-icon">📊</text>
+        <text class="m-name">统计报表</text>
+        <text class="m-arrow">›</text>
+      </view>
+      <view v-if="store.isAdmin" class="menu-item" @click="go('/pages/member/list')">
+        <text class="m-icon">👤</text>
+        <text class="m-name">成员管理</text>
         <text class="m-arrow">›</text>
       </view>
       <view class="menu-item" @click="changePwd">
