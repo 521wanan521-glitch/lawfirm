@@ -5,6 +5,29 @@ import { get, post, put, del } from '@/utils/request'
 export const login = (data) => post('/auth/login', data)
 export const getMe = () => get('/auth/me')
 export const changePassword = (data) => put('/auth/password', data)
+export const updateProfile = (data) => put('/auth/profile', data)
+
+/** 上传头像（返回更新后的 UserInfo） */
+export function uploadAvatar(filePath) {
+  return new Promise((resolve, reject) => {
+    uni.uploadFile({
+      url: 'http://47.107.62.86/api/auth/avatar',
+      filePath,
+      name: 'file',
+      header: { Authorization: `Bearer ${uni.getStorageSync('token')}` },
+      success: (res) => {
+        try {
+          const body = JSON.parse(res.data)
+          if (body.code === 0) resolve(body.data)
+          else reject(new Error(body.message || '上传失败'))
+        } catch (e) {
+          reject(new Error('上传失败'))
+        }
+      },
+      fail: reject
+    })
+  })
+}
 
 // ============ 工作台 ============
 export const getSummary = () => get('/dashboard/summary')

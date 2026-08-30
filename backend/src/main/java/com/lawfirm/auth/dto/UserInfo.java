@@ -17,6 +17,7 @@ public class UserInfo {
     private User.Role role;
     private String department;
     private String title;
+    private String avatar;
     private Boolean enabled;
 
     public static UserInfo from(User u) {
@@ -29,6 +30,7 @@ public class UserInfo {
         info.setRole(u.getRole());
         info.setDepartment(u.getDepartment());
         info.setTitle(u.getTitle());
+        info.setAvatar(u.getAvatar());
         info.setEnabled(u.getEnabled());
         return info;
     }

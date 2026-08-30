@@ -11,7 +11,7 @@
     <view class="list">
       <view v-for="(group, i) in grouped" :key="i">
         <view class="date-header">{{ group.date }}（{{ group.weekday }}）</view>
-        <view v-for="e in group.events" :key="e.id" class="event-card" @longpress="removeEvent(e)">
+        <view v-for="e in group.events" :key="e.id" class="event-card" @click="viewEvent(e)" @longpress="removeEvent(e)">
           <view class="e-left" :class="'et-' + e.type"></view>
           <view class="e-main">
             <text class="e-title">{{ e.title }}</text>
@@ -56,6 +56,37 @@
         <view class="d-btn" @click="save">保存</view>
       </view>
     </view>
+
+    <!-- 日程详情弹窗 -->
+    <view v-if="detailEvent" class="mask" @click="closeDetail">
+      <view class="detail-dialog" @click.stop>
+        <view class="dd-head flex-between">
+          <text class="dd-title">{{ detailEvent.title }}</text>
+          <text class="dd-type">{{ eventTypeLabel(detailEvent.type) }}</text>
+        </view>
+        <view class="dd-row">
+          <text class="dd-k">时间</text>
+          <text class="dd-v">{{ formatTime(detailEvent.startTime) }} ~ {{ formatTime(detailEvent.endTime) }}</text>
+        </view>
+        <view v-if="detailEvent.location" class="dd-row">
+          <text class="dd-k">地点</text>
+          <text class="dd-v">{{ detailEvent.location }}</text>
+        </view>
+        <view v-if="detailEvent.creatorName" class="dd-row">
+          <text class="dd-k">创建人</text>
+          <text class="dd-v">{{ detailEvent.creatorName }}</text>
+        </view>
+        <view v-if="detailEvent.participantNames && detailEvent.participantNames.length" class="dd-row">
+          <text class="dd-k">参与人</text>
+          <text class="dd-v">{{ detailEvent.participantNames.join('、') }}</text>
+        </view>
+        <view v-if="detailEvent.description" class="dd-desc">
+          <text class="dd-k">说明</text>
+          <text class="dd-content">{{ detailEvent.description }}</text>
+        </view>
+        <view class="dd-close" @click="closeDetail">关 闭</view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -71,6 +102,7 @@ export default {
       month: now.getMonth() + 1,
       events: [],
       showDialog: false,
+      detailEvent: null,
       typeOptions: Object.keys(EVENT_TYPE_MAP).map((k) => ({ value: k, label: EVENT_TYPE_MAP[k] })),
       typeLabel: '',
       form: {
@@ -189,6 +221,16 @@ export default {
           }
         }
       })
+    },
+    viewEvent(e) {
+      this.detailEvent = e
+    },
+    closeDetail() {
+      this.detailEvent = null
+    },
+    formatTime(t) {
+      if (!t) return '-'
+      return t.substring(5, 16).replace('T', ' ')
     }
   }
 }
@@ -382,6 +424,75 @@ export default {
       font-weight: 600;
       border-radius: 44rpx;
       background: linear-gradient(90deg, #2f6fed, #4a8bf5);
+    }
+  }
+
+  .detail-dialog {
+    width: 100%;
+    background: #fff;
+    border-radius: 24rpx 24rpx 0 0;
+    padding: 40rpx 32rpx;
+    padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
+
+    .dd-head {
+      margin-bottom: 24rpx;
+      padding-bottom: 20rpx;
+      border-bottom: 1px solid #f5f6f8;
+
+      .dd-title {
+        flex: 1;
+        font-size: 34rpx;
+        font-weight: 700;
+        color: #1f2329;
+        margin-right: 16rpx;
+      }
+      .dd-type {
+        font-size: 24rpx;
+        color: #2f6fed;
+        flex-shrink: 0;
+      }
+    }
+    .dd-row {
+      display: flex;
+      padding: 12rpx 0;
+
+      .dd-k {
+        width: 120rpx;
+        color: #909399;
+        font-size: 26rpx;
+        flex-shrink: 0;
+      }
+      .dd-v {
+        flex: 1;
+        color: #303133;
+        font-size: 26rpx;
+      }
+    }
+    .dd-desc {
+      padding: 12rpx 0;
+
+      .dd-k {
+        color: #909399;
+        font-size: 26rpx;
+        display: block;
+        margin-bottom: 8rpx;
+      }
+      .dd-content {
+        color: #303133;
+        font-size: 26rpx;
+        line-height: 1.7;
+        display: block;
+      }
+    }
+    .dd-close {
+      margin-top: 24rpx;
+      height: 88rpx;
+      line-height: 88rpx;
+      text-align: center;
+      color: #606266;
+      font-size: 30rpx;
+      border-radius: 44rpx;
+      background: #f5f6f8;
     }
   }
 }

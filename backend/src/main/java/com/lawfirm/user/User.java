@@ -59,6 +59,10 @@ public class User extends BaseEntity {
     @Column(length = 50)
     private String title;
 
+    /** 头像地址（URL） */
+    @Column(length = 500)
+    private String avatar;
+
     /** 状态：true 启用 / false 停用 */
     @Column(nullable = false)
     private Boolean enabled = true;

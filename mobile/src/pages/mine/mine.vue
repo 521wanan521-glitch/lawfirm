@@ -2,11 +2,16 @@
   <view class="mine">
     <!-- 用户卡片 -->
     <view class="user-card">
-      <view class="avatar">{{ avatarText }}</view>
+      <view class="avatar-wrap" @click="changeAvatar">
+        <image v-if="avatarUrl" class="avatar-img" :src="avatarUrl" mode="aspectFill" />
+        <view v-else class="avatar">{{ avatarText }}</view>
+        <view class="camera">📷</view>
+      </view>
       <view class="user-info">
         <text class="name">{{ store.displayName || '未登录' }}</text>
         <text class="role">{{ roleLabel(store.role) }}{{ store.user && store.user.department ? ' · ' + store.user.department : '' }}</text>
       </view>
+      <text class="edit" @click="openEdit">编辑</text>
     </view>
 
     <!-- 功能入口 -->
@@ -62,19 +67,34 @@
     <view class="logout" @click="doLogout">退出登录</view>
 
     <view class="version">律所办公系统 移动端 v1.0.0</view>
+
+    <!-- 编辑资料弹窗 -->
+    <view v-if="showEdit" class="mask" @click="showEdit = false">
+      <view class="dialog" @click.stop>
+        <view class="d-title">编辑资料</view>
+        <input class="d-input" v-model="editForm.realName" placeholder="姓名" placeholder-class="ph" />
+        <input class="d-input" v-model="editForm.phone" placeholder="电话" placeholder-class="ph" />
+        <input class="d-input" v-model="editForm.email" placeholder="邮箱" placeholder-class="ph" />
+        <view class="d-btn" @click="saveProfile">保存</view>
+      </view>
+    </view>
   </view>
 </template>
 
 <script>
-import { changePassword } from '@/api/index'
+import { changePassword, updateProfile, uploadAvatar } from '@/api/index'
 import { useUserStore } from '@/store/index'
 import { roleLabel } from '@/utils/dict'
+
+const BASE_URL = 'http://47.107.62.86/api'
 
 export default {
   data() {
     return {
       showPwd: false,
-      pwdForm: { oldPassword: '', newPassword: '', confirm: '' }
+      pwdForm: { oldPassword: '', newPassword: '', confirm: '' },
+      showEdit: false,
+      editForm: { realName: '', email: '', phone: '' }
     }
   },
   computed: {
@@ -83,12 +103,60 @@ export default {
     },
     avatarText() {
       return (this.store.displayName || '律').charAt(0)
+    },
+    avatarUrl() {
+      const a = this.store.user && this.store.user.avatar
+      if (!a) return ''
+      return a.startsWith('http') ? a : BASE_URL + a
     }
   },
   methods: {
     roleLabel,
     go(url) {
       uni.navigateTo({ url })
+    },
+    changeAvatar() {
+      uni.chooseImage({
+        count: 1,
+        sizeType: ['compressed'],
+        sourceType: ['album', 'camera'],
+        success: async (res) => {
+          const path = res.tempFilePaths && res.tempFilePaths[0]
+          if (!path) return
+          uni.showLoading({ title: '上传中...' })
+          try {
+            const user = await uploadAvatar(path)
+            this.store.user = { ...this.store.user, ...user }
+            uni.setStorageSync('user', this.store.user)
+            uni.hideLoading()
+            uni.showToast({ title: '头像已更新', icon: 'success' })
+          } catch (e) {
+            uni.hideLoading()
+          }
+        }
+      })
+    },
+    openEdit() {
+      this.editForm = {
+        realName: this.store.user ? this.store.user.realName : '',
+        email: this.store.user ? this.store.user.email : '',
+        phone: this.store.user ? this.store.user.phone : ''
+      }
+      this.showEdit = true
+    },
+    async saveProfile() {
+      if (!this.editForm.realName.trim()) return uni.showToast({ title: '请输入姓名', icon: 'none' })
+      try {
+        const user = await updateProfile({
+          realName: this.editForm.realName.trim(),
+          email: this.editForm.email,
+          phone: this.editForm.phone
+        })
+        this.store.user = { ...this.store.user, ...user }
+        uni.setStorageSync('user', this.store.user)
+        uni.showToast({ title: '已保存', icon: 'success' })
+        this.showEdit = false
+      } catch (e) {}
     },
     changePwd() {
       uni.showModal({
@@ -146,19 +214,43 @@ export default {
     align-items: center;
     color: #fff;
 
-    .avatar {
-      width: 120rpx;
-      height: 120rpx;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.25);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 48rpx;
-      font-weight: 700;
+    .avatar-wrap {
+      position: relative;
       margin-right: 24rpx;
+
+      .avatar, .avatar-img {
+        width: 120rpx;
+        height: 120rpx;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .avatar {
+        background: rgba(255, 255, 255, 0.25);
+        font-size: 48rpx;
+        font-weight: 700;
+      }
+      .avatar-img {
+        border: 2rpx solid rgba(255, 255, 255, 0.5);
+      }
+      .camera {
+        position: absolute;
+        right: -4rpx;
+        bottom: -4rpx;
+        width: 44rpx;
+        height: 44rpx;
+        border-radius: 50%;
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22rpx;
+        box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.15);
+      }
     }
     .user-info {
+      flex: 1;
       display: flex;
       flex-direction: column;
 
@@ -171,6 +263,13 @@ export default {
         opacity: 0.92;
         margin-top: 8rpx;
       }
+    }
+    .edit {
+      font-size: 24rpx;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      border-radius: 24rpx;
+      padding: 6rpx 20rpx;
     }
   }
 
@@ -222,6 +321,48 @@ export default {
     color: #c0c4cc;
     font-size: 24rpx;
     padding: 30rpx 0;
+  }
+
+  .mask {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 300;
+    display: flex;
+    align-items: flex-end;
+
+    .dialog {
+      width: 100%;
+      background: #fff;
+      border-radius: 24rpx 24rpx 0 0;
+      padding: 40rpx 32rpx;
+      padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
+
+      .d-title {
+        font-size: 32rpx;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 30rpx;
+      }
+      .d-input {
+        background: #f5f6f8;
+        border-radius: 12rpx;
+        padding: 22rpx;
+        font-size: 28rpx;
+        margin-bottom: 20rpx;
+      }
+      .ph { color: #c0c4cc; }
+      .d-btn {
+        height: 88rpx;
+        line-height: 88rpx;
+        text-align: center;
+        color: #fff;
+        font-size: 30rpx;
+        font-weight: 600;
+        border-radius: 44rpx;
+        background: linear-gradient(90deg, #2f6fed, #4a8bf5);
+      }
+    }
   }
 }
 </style>
