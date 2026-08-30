@@ -205,7 +205,7 @@ export default {
 
 <style lang="scss" scoped>
 .mine {
-  padding-bottom: 60rpx;
+  padding-bottom: 200rpx;
 
   .user-card {
     background: linear-gradient(135deg, #2f6fed, #4a8bf5);

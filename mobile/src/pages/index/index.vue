@@ -141,7 +141,7 @@ export default {
 
 <style lang="scss" scoped>
 .home {
-  padding-bottom: 40rpx;
+  padding-bottom: 200rpx;
 
   .header {
     background: linear-gradient(135deg, #2f6fed, #4a8bf5);

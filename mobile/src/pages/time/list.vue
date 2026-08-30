@@ -144,7 +144,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.page { padding-bottom: 140rpx; }
+.page { padding-bottom: 200rpx; }
 .list { padding: 20rpx 24rpx; }
 .time-card {
   background: #fff;
@@ -184,7 +184,7 @@ export default {
 .fab {
   position: fixed;
   right: 40rpx;
-  bottom: 120rpx;
+  bottom: 180rpx;
   width: 100rpx;
   height: 100rpx;
   border-radius: 50%;

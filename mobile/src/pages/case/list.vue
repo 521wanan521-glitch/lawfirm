@@ -126,7 +126,7 @@ export default {
 
 <style lang="scss" scoped>
 .page {
-  padding-bottom: 140rpx;
+  padding-bottom: 200rpx;
 }
 
 .search-bar {
@@ -257,7 +257,7 @@ export default {
 .fab {
   position: fixed;
   right: 40rpx;
-  bottom: 120rpx;
+  bottom: 180rpx;
   width: 100rpx;
   height: 100rpx;
   border-radius: 50%;
