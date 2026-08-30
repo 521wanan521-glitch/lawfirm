@@ -201,7 +201,7 @@ export default {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
-  z-index: 200;
+  z-index: 1000;
   display: flex;
   align-items: flex-end;
 
