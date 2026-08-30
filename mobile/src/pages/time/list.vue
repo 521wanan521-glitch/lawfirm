@@ -74,9 +74,13 @@ export default {
       this.load()
     }
   },
+  onPullDownRefresh() {
+    this.page = 1
+    this.load(() => uni.stopPullDownRefresh())
+  },
   methods: {
     timeStatusLabel,
-    async load() {
+    async load(cb) {
       this.loading = true
       try {
         const data = await pageTimeEntries({ page: this.page, size: this.size })
@@ -84,6 +88,7 @@ export default {
         this.total = data.total
       } finally {
         this.loading = false
+        if (cb) cb()
       }
     },
     async openCreate() {

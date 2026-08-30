@@ -46,11 +46,15 @@ export default {
       this.load()
     }
   },
+  onPullDownRefresh() {
+    this.page = 1
+    this.load(() => uni.stopPullDownRefresh())
+  },
   methods: {
     categoryLabel(c) {
       return KNOWLEDGE_CATEGORY_MAP[c] || c || '-'
     },
-    async load() {
+    async load(cb) {
       this.loading = true
       try {
         const params = { page: this.page, size: this.size }
@@ -60,6 +64,7 @@ export default {
         this.total = data.total
       } finally {
         this.loading = false
+        if (cb) cb()
       }
     },
     onSearch() {

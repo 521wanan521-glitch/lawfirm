@@ -1,5 +1,9 @@
 <template>
   <view class="chat-page">
+    <view class="top-bar">
+      <text class="title">AI 助手</text>
+      <text class="setting" @click="openSetting">⚙️ 模型设置</text>
+    </view>
     <scroll-view scroll-y class="msg-list" :scroll-into-view="scrollTo">
       <view v-if="!messages.length" class="welcome">
         <text class="w-icon">🤖</text>
@@ -30,13 +34,37 @@
       <input class="chat-input" v-model="draft" confirm-type="send" placeholder="输入你的问题..." placeholder-class="ph" @confirm="send" />
       <view class="send-btn" @click="send">{{ streaming ? '停止' : '发送' }}</view>
     </view>
+
+    <!-- 模型设置弹窗 -->
+    <view v-if="showSetting" class="mask" @click="showSetting = false">
+      <view class="dialog" @click.stop>
+        <view class="d-title">模型设置</view>
+        <view class="d-tip">未配置时无法使用 AI 助手，Key 加密存储仅本人可见</view>
+        <picker :range="providers" range-key="name" @change="onProviderChange">
+          <view class="d-picker">{{ providerName || '选择厂商' }}</view>
+        </picker>
+        <input class="d-input" v-model="llmForm.apiKey" type="password" placeholder="API Key（必填）" placeholder-class="ph" />
+        <input class="d-input" v-model="llmForm.baseUrl" placeholder="接口地址" placeholder-class="ph" />
+        <input class="d-input" v-model="llmForm.model" placeholder="模型名称" placeholder-class="ph" />
+        <view class="d-btn" @click="saveSetting">保存</view>
+      </view>
+    </view>
   </view>
 </template>
 
 <script>
-import { confirmAction, cancelAction } from '@/api/index'
+import { confirmAction, cancelAction, getLlmConfig, saveLlmConfig } from '@/api/index'
 
 const BASE_URL = 'http://47.107.62.86/api'
+
+const LLM_PROVIDERS = [
+  { key: 'deepseek', name: 'DeepSeek（推荐）', baseUrl: 'https://api.deepseek.com', model: 'deepseek-chat' },
+  { key: 'qwen', name: '通义千问（阿里云）', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus' },
+  { key: 'glm', name: '智谱 GLM', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-flash' },
+  { key: 'kimi', name: 'Kimi 月之暗面', baseUrl: 'https://api.moonshot.cn/v1', model: 'moonshot-v1-8k' },
+  { key: 'openai', name: 'OpenAI', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
+  { key: 'custom', name: '自定义（OpenAI 兼容接口）', baseUrl: '', model: '' }
+]
 
 export default {
   data() {
@@ -46,7 +74,11 @@ export default {
       streaming: false,
       scrollTo: '',
       controller: null,
-      sessionId: null
+      sessionId: null,
+      showSetting: false,
+      providers: LLM_PROVIDERS,
+      providerName: '',
+      llmForm: { provider: 'deepseek', apiKey: '', baseUrl: 'https://api.deepseek.com', model: 'deepseek-chat' }
     }
   },
   methods: {
@@ -179,6 +211,41 @@ export default {
         t.ok = false
         uni.showToast({ title: '已取消', icon: 'none' })
       } catch (e) {}
+    },
+    async openSetting() {
+      this.showSetting = true
+      try {
+        const cfg = await getLlmConfig()
+        if (cfg && cfg.configured) {
+          this.llmForm.provider = cfg.provider
+          this.providerName = (LLM_PROVIDERS.find((p) => p.key === cfg.provider) || {}).name || cfg.provider
+          this.llmForm.baseUrl = cfg.baseUrl
+          this.llmForm.model = cfg.model
+          this.llmForm.apiKey = ''
+        }
+      } catch (e) {}
+    },
+    onProviderChange(e) {
+      const p = this.providers[Number(e.detail.value)]
+      this.llmForm.provider = p.key
+      this.providerName = p.name
+      this.llmForm.baseUrl = p.baseUrl
+      this.llmForm.model = p.model
+    },
+    async saveSetting() {
+      if (!this.llmForm.apiKey.trim()) return uni.showToast({ title: '请填写 API Key', icon: 'none' })
+      if (!this.llmForm.baseUrl.trim()) return uni.showToast({ title: '请填写接口地址', icon: 'none' })
+      if (!this.llmForm.model.trim()) return uni.showToast({ title: '请填写模型名称', icon: 'none' })
+      try {
+        await saveLlmConfig({
+          provider: this.llmForm.provider,
+          apiKey: this.llmForm.apiKey.trim(),
+          baseUrl: this.llmForm.baseUrl.trim(),
+          model: this.llmForm.model.trim()
+        })
+        uni.showToast({ title: '已保存', icon: 'success' })
+        this.showSetting = false
+      } catch (e) {}
     }
   }
 }
@@ -190,6 +257,25 @@ export default {
   flex-direction: column;
   height: 100vh;
   background: #f5f6f8;
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    padding: 16rpx 24rpx;
+    border-bottom: 1px solid #f0f2f5;
+
+    .title {
+      font-size: 30rpx;
+      font-weight: 600;
+      color: #1f2329;
+    }
+    .setting {
+      font-size: 24rpx;
+      color: #2f6fed;
+    }
+  }
 
   .msg-list {
     flex: 1;
@@ -308,6 +394,55 @@ export default {
       background: #2f6fed;
       padding: 14rpx 32rpx;
       border-radius: 32rpx;
+    }
+  }
+
+  .mask {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 300;
+    display: flex;
+    align-items: flex-end;
+
+    .dialog {
+      width: 100%;
+      background: #fff;
+      border-radius: 24rpx 24rpx 0 0;
+      padding: 40rpx 32rpx;
+      padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
+
+      .d-title {
+        font-size: 32rpx;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 12rpx;
+      }
+      .d-tip {
+        font-size: 22rpx;
+        color: #a8abb2;
+        text-align: center;
+        margin-bottom: 24rpx;
+      }
+      .d-input, .d-picker {
+        background: #f5f6f8;
+        border-radius: 12rpx;
+        padding: 22rpx;
+        font-size: 28rpx;
+        margin-bottom: 20rpx;
+        color: #303133;
+      }
+      .ph { color: #c0c4cc; }
+      .d-btn {
+        height: 88rpx;
+        line-height: 88rpx;
+        text-align: center;
+        color: #fff;
+        font-size: 30rpx;
+        font-weight: 600;
+        border-radius: 44rpx;
+        background: linear-gradient(90deg, #2f6fed, #4a8bf5);
+      }
     }
   }
 }

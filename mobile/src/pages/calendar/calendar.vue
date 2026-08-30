@@ -163,8 +163,8 @@ export default {
       const data = {
         title: this.form.title.trim(),
         type: this.form.type,
-        startTime: `${this.form.date}T${this.form.startTime}:00`,
-        endTime: `${this.form.date}T${this.form.endTime}:00`,
+        startTime: `${this.form.date} ${this.form.startTime}:00`,
+        endTime: `${this.form.date} ${this.form.endTime}:00`,
         location: this.form.location,
         description: this.form.description
       }

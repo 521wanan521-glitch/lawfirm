@@ -16,7 +16,8 @@
     {
       "path": "pages/case/list",
       "style": {
-        "navigationBarTitleText": "案件管理"
+        "navigationBarTitleText": "案件管理",
+        "enablePullDownRefresh": true
       }
     },
     {
@@ -34,7 +35,8 @@
     {
       "path": "pages/client/list",
       "style": {
-        "navigationBarTitleText": "客户管理"
+        "navigationBarTitleText": "客户管理",
+        "enablePullDownRefresh": true
       }
     },
     {
@@ -52,7 +54,8 @@
     {
       "path": "pages/approval/list",
       "style": {
-        "navigationBarTitleText": "审批流程"
+        "navigationBarTitleText": "审批流程",
+        "enablePullDownRefresh": true
       }
     },
     {
@@ -70,7 +73,8 @@
     {
       "path": "pages/time/list",
       "style": {
-        "navigationBarTitleText": "工时记录"
+        "navigationBarTitleText": "工时记录",
+        "enablePullDownRefresh": true
       }
     },
     {
@@ -88,7 +92,8 @@
     {
       "path": "pages/knowledge/list",
       "style": {
-        "navigationBarTitleText": "知识库"
+        "navigationBarTitleText": "知识库",
+        "enablePullDownRefresh": true
       }
     },
     {

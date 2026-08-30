@@ -64,13 +64,17 @@ export default {
   onShow() {
     this.load()
   },
+  onPullDownRefresh() {
+    this.page = 1
+    this.load(() => uni.stopPullDownRefresh())
+  },
   methods: {
     approvalStatusLabel,
     approvalTypeLabel,
     formatDate(d) {
       return d ? d.substring(0, 10) : '-'
     },
-    async load() {
+    async load(cb) {
       this.loading = true
       try {
         const params = { page: this.page, size: this.size }
@@ -80,6 +84,7 @@ export default {
         this.total = data.total
       } finally {
         this.loading = false
+        if (cb) cb()
       }
     },
     switchStatus(s) {

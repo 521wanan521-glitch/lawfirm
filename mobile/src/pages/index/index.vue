@@ -127,7 +127,13 @@ export default {
       } catch (e) {}
     },
     go(url) {
-      uni.navigateTo({ url })
+      // tabBar 页面必须用 switchTab，否则跳转失败
+      const tabPages = ['/pages/index/index', '/pages/case/list', '/pages/calendar/calendar', '/pages/mine/mine']
+      if (tabPages.includes(url)) {
+        uni.switchTab({ url })
+      } else {
+        uni.navigateTo({ url })
+      }
     }
   }
 }
