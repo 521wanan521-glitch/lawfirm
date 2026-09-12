@@ -85,8 +85,7 @@
 import { changePassword, updateProfile, uploadAvatar } from '@/api/index'
 import { useUserStore } from '@/store/index'
 import { roleLabel } from '@/utils/dict'
-
-const BASE_URL = 'http://47.107.62.86/api'
+import { BASE_URL } from '@/utils/config'
 
 export default {
   data() {

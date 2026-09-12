@@ -1,8 +1,7 @@
 // 统一请求封装（uni.request）
 // 后端接口与 web 端一致，统一返回 { code, data, message }
 
-// 后端地址：默认线上服务器，可在此修改
-const BASE_URL = 'http://47.107.62.86/api'
+import { BASE_URL } from './config'
 
 export function request(options) {
   const { url, method = 'GET', data = {}, showLoading = false } = options

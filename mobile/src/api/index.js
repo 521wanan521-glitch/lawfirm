@@ -1,5 +1,6 @@
 // API 层：与 web 端后端接口一致
 import { get, post, put, del } from '@/utils/request'
+import { BASE_URL } from '@/utils/config'
 
 // ============ 认证 ============
 export const login = (data) => post('/auth/login', data)
@@ -11,7 +12,7 @@ export const updateProfile = (data) => put('/auth/profile', data)
 export function uploadAvatar(filePath) {
   return new Promise((resolve, reject) => {
     uni.uploadFile({
-      url: 'http://47.107.62.86/api/auth/avatar',
+      url: BASE_URL + '/auth/avatar',
       filePath,
       name: 'file',
       header: { Authorization: `Bearer ${uni.getStorageSync('token')}` },

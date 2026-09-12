@@ -54,8 +54,7 @@
 
 <script>
 import { confirmAction, cancelAction, getLlmConfig, saveLlmConfig } from '@/api/index'
-
-const BASE_URL = 'http://47.107.62.86/api'
+import { BASE_URL } from '@/utils/config'
 
 const LLM_PROVIDERS = [
   { key: 'deepseek', name: 'DeepSeek（推荐）', baseUrl: 'https://api.deepseek.com', model: 'deepseek-chat' },
