@@ -3,7 +3,8 @@
     <!-- 顶部用户信息 -->
     <view class="header">
       <view class="user-row">
-        <view class="avatar">{{ avatarText }}</view>
+        <image v-if="avatarUrl" class="avatar-img" :src="avatarUrl" mode="aspectFill" />
+        <view v-else class="avatar">{{ avatarText }}</view>
         <view class="user-info">
           <text class="name">{{ store.displayName || '未登录' }}</text>
           <text class="role">{{ roleLabel(store.role) }}</text>
@@ -113,6 +114,11 @@ export default {
     },
     avatarText() {
       return (this.store.displayName || '律').charAt(0)
+    },
+    avatarUrl() {
+      const a = this.store.user && this.store.user.avatar
+      if (!a) return ''
+      return a.startsWith('http') ? a : 'http://47.107.62.86/api' + a
     }
   },
   onShow() {
@@ -163,6 +169,13 @@ export default {
         font-size: 40rpx;
         font-weight: 700;
         margin-right: 20rpx;
+      }
+      .avatar-img {
+        width: 96rpx;
+        height: 96rpx;
+        border-radius: 50%;
+        margin-right: 20rpx;
+        border: 2rpx solid rgba(255, 255, 255, 0.5);
       }
       .user-info {
         display: flex;
